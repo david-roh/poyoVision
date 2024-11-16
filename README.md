@@ -25,7 +25,7 @@ Read more about [how environment variables work with Next.js here](https://nextj
 There is a `.env.sample` file you can copy and rename to `.env.local` for use in your project. Be sure to fill out the environment variable values in the `.env.local` file with your actual values.
 
 ### Learn More
-
+test
 For more information about building apps with Pinata and IPFS, check out the following resources:
 
 - [Pinata Docs](https://docs.pinata.cloud)
