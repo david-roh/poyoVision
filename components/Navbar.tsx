@@ -54,7 +54,6 @@ export default function Navbar() {
             <nav className="flex gap-6">
               {[
                 { href: "/", label: "Home" },
-                { href: "/course", label: "Course" },
                 { href: "/new-session", label: "Video Dashboard" }
               ].map((link) => (
                 <Link key={link.href} href={link.href} className="no-underline">
@@ -86,7 +85,7 @@ export default function Navbar() {
           </div>
 
           <div className="scale-110 hover:scale-125 transition-transform duration-200">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </Toolbar>

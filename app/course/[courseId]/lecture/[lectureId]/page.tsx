@@ -1,23 +1,62 @@
 'use client'
 
+import { useParams } from "next/navigation";
 import { Button, Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { Psychology, Description, Mic } from '@mui/icons-material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PhotoCameraBackIcon from '@mui/icons-material/PhotoCameraBack';
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-export default function Component() {
-  const [message, setMessage] = useState("")
-  const [chatHistory, setCharHistory] = useState([
-    { role: "assistant", content: "Hello! I'm your Study GPT assistant. How can I help you understand your lecture materials better?" },
-  ])
+interface LectureData {
+  name: string;
+  description: string;
+  notes?: string;
+  transcript?: string;
+  audioUrl?: string;
+  images?: { url: string }[];
+}
+
+export default function LectureIdPage() {
+  const params = useParams();
+  const [lectureData, setLectureData] = useState<LectureData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLectureData = async () => {
+      try {
+        const response = await fetch(`/api/courses/${params.courseId}/lecture/${params.lectureId}`);
+        if (!response.ok) throw new Error("Failed to fetch course data");
+        const data = await response.json();
+        setLectureData(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.courseId) {
+      fetchLectureData();
+    }
+  }, [params.courseId]);
+
+  if (loading) return <div>Loading course data...</div>;
+  if (!lectureData) return <div>Course not found</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Main Content */}
+      <header className="container mx-auto">
+        <Typography variant="h4" sx={{ color: '#3E53A0', fontWeight: 600 }}>
+          {lectureData.name}
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#666', mt: 1 }}>
+          {lectureData.description}
+        </Typography>
+      </header>
+
       <main className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-[1fr_1fr_300px] gap-8">
-          {/* Left Column - Notes */}
+          {/* Notes Column */}
           <Card 
             elevation={0}
             sx={{ 
@@ -55,13 +94,17 @@ export default function Component() {
             <CardContent className="p-6">
               <div className="h-[calc(100vh-12rem)] overflow-auto custom-scrollbar">
                 <div className="prose max-w-none">
-                  <p className="text-gray-600">Your notes will appear here...</p>
+                  {lectureData.notes ? (
+                    <div dangerouslySetInnerHTML={{ __html: lectureData.notes }} />
+                  ) : (
+                    <p className="text-gray-600">No notes available yet...</p>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Middle Column - Audio Transcript and Player */}
+          {/* Audio Transcript Column */}
           <div className="flex flex-col gap-6">
             <Card 
               elevation={0}
@@ -100,11 +143,16 @@ export default function Component() {
               />
               <CardContent className="p-6">
                 <div className="h-[calc(100vh-18rem)] overflow-auto custom-scrollbar">
-                  <p className="text-gray-600">Transcript will appear here...</p>
+                  {lectureData.transcript ? (
+                    <p>{lectureData.transcript}</p>
+                  ) : (
+                    <p className="text-gray-600">No transcript available yet...</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
-            
+
+            {/* Audio Player Card */}
             <Card 
               elevation={0}
               sx={{ 
@@ -137,7 +185,7 @@ export default function Component() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <audio controls className="w-full rounded-full">
-                    <source src="" type="audio/mpeg" />
+                    <source src={lectureData.audioUrl} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                 </div>
@@ -145,7 +193,7 @@ export default function Component() {
             </Card>
           </div>
 
-          {/* Right Column - Scrollable Images */}
+          {/* Images Column */}
           <Card 
             elevation={0}
             sx={{ 
@@ -182,10 +230,18 @@ export default function Component() {
             />
             <CardContent className="p-6">
               <div className="grid gap-6 h-[calc(100vh-18rem)] overflow-auto custom-scrollbar">
-                {/* Example image placeholders */}
-                <img src="/placeholder.svg?height=200&width=200" alt="Study material 1" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
-                <img src="/placeholder.svg?height=200&width=200" alt="Study material 2" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
-                <img src="/placeholder.svg?height=200&width=200" alt="Study material 3" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
+                {lectureData.images && lectureData.images.length > 0 ? (
+                  lectureData.images.map((image, index) => (
+                    <img 
+                      key={index}
+                      src={image.url} 
+                      alt={`Study material ${index + 1}`} 
+                      className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" 
+                    />
+                  ))
+                ) : (
+                  <p className="text-gray-600">No images available yet...</p>
+                )}
               </div>
             </CardContent>
           </Card>
