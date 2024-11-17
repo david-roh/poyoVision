@@ -1,42 +1,25 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button, Card, CardContent } from "@mui/material"
 import MenuBookIcon from '@mui/icons-material/MenuBook'
 import { useRouter } from "next/navigation";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-
-interface Course {
-	id: string;
-	name: string;
-	description: string;
-}
+import { useCourses } from '@/hooks/useCourses';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from "@mui/material";
 
 export default function Home() {
 	const router = useRouter();
-	const [courses, setCourses] = useState<Course[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		const fetchCourses = async () => {
-			try {
-				const response = await fetch("/api/courses");
-				if (!response.ok) throw new Error("Failed to fetch courses");
-				const data = await response.json();
-				setCourses(data);
-			} catch (error) {
-				console.error(error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchCourses();
-	}, []);
+	const { courses, loading } = useCourses();
 
 	const [file, setFile] = useState("");
 	const [cid, setCid] = useState("");
 	const [uploading, setUploading] = useState(false);
+	const [deleteDialog, setDeleteDialog] = useState<{open: boolean, courseId: string | null}>({
+		open: false,
+		courseId: null
+	});
 
 	const inputFile: any = useRef(null);
 
@@ -76,10 +59,65 @@ export default function Home() {
 		}
 	};
 
+	const handleDelete = async () => {
+		if (!deleteDialog.courseId) return;
+
+		try {
+			const response = await fetch('/api/courses', {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ id: deleteDialog.courseId }),
+			});
+
+			if (response.ok) {
+				router.refresh();
+			} else {
+				throw new Error('Failed to delete course');
+			}
+		} catch (error) {
+			console.error(error);
+			alert('Failed to delete the course');
+		} finally {
+			setDeleteDialog({ open: false, courseId: null });
+		}
+	};
+
 	return (
 		<div>
-		{/* Main Content */}
-			<main className="container max-w-5xl mx-auto px-4 pt-8"> {/* Increased max-width */}
+			<Dialog
+				open={deleteDialog.open}
+				onClose={() => setDeleteDialog({ open: false, courseId: null })}
+				PaperProps={{
+					sx: {
+						borderRadius: '12px',
+						maxWidth: '400px'
+					}
+				}}
+			>
+				<DialogTitle sx={{ 
+					color: '#3E53A0',
+					pb: 1
+				}}>
+					Delete Course
+				</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						Are you sure you want to delete this course?
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setDeleteDialog({ open: false, courseId: null })} color="primary">
+						Cancel
+					</Button>
+					<Button onClick={handleDelete} color="primary" autoFocus>
+						Delete
+					</Button>
+				</DialogActions>
+			</Dialog>
+			{/* Main Content */}
+			<main className="container max-w-5xl mx-auto px-4 pt-8"> 
 			<div className="flex justify-between items-center mb-8">
 				<h1 className="text-4xl font-bold text-[#3E53A0] font-telegraf">My Courses</h1>
 				<Button
@@ -103,7 +141,7 @@ export default function Home() {
 			{loading ? (
 				<div>Loading courses...</div>
 			) : (
-				<div className="grid gap-6 md:grid-cols-2"> {/* Increased gap and reduced columns */}
+				<div className="grid gap-6 md:grid-cols-2"> 
 				{courses.map((course) => (
 					<Card 
 						key={course.id} 
@@ -124,9 +162,28 @@ export default function Home() {
 							sx={{ 
 								p: 0,
 								height: '100%',
-								'&:last-child': { pb: 0 }
+								'&:last-child': { pb: 0 },
+								position: 'relative'
 							}}
 						>
+							<Button 
+								onClick={() => setDeleteDialog({ open: true, courseId: course.id })}
+								sx={{
+									position: 'absolute',
+									top: 8,
+									right: 8,
+									minWidth: 'auto',
+									p: 1,
+									zIndex: 1,
+									color: '#666',
+									'&:hover': {
+										color: '#ff4444',
+										bgcolor: 'rgba(255, 68, 68, 0.1)',
+									},
+								}}
+							>
+								<DeleteOutlineIcon />
+							</Button>
 							<Button 
 								fullWidth
 								onClick={() => router.push(`/course/${course.id}`)}

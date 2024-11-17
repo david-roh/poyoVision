@@ -130,17 +130,17 @@ export async function GET(
       );
     }
 
-    // Get lectures for this course
+    // Update the lectures filter to use toString()
     const lectures = dummyLectures.filter(
       (lecture) => lecture.courseId.toString() === params.courseId
     );
 
-    // Return both course and lectures data
     return NextResponse.json({
       ...course,
       lectures
     });
   } catch (error) {
+    console.error('Error fetching course:', error); // Add logging
     return NextResponse.json(
       { error: "Failed to fetch course" },
       { status: 500 }

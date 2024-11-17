@@ -6,6 +6,7 @@ import { UserButton } from "@clerk/nextjs";
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useState } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
+import { useCourses } from '@/hooks/useCourses';
 
 const shakeAnimation = `
   @keyframes shake {
@@ -33,11 +34,7 @@ export default function Navbar() {
     setAnchorEl(null);
   };
 
-  const courses = [
-    { id: 1, name: "Course 1" },
-    { id: 2, name: "Course 2" },
-    { id: 3, name: "Course 3" },
-  ];
+  const { courses, loading } = useCourses();
 
   return (
     <AppBar 
@@ -104,7 +101,6 @@ export default function Navbar() {
               <nav className="flex gap-2 md:gap-4 lg:gap-6">
                 {[
                   { href: "/", label: "Home" },
-                  { href: "/course", label: "Lecture" },
                   { href: "/new-session", label: "Video Dashboard" }
                 ].map((link) => (
                   <Link key={link.href} href={link.href} className="no-underline">
@@ -191,26 +187,30 @@ export default function Navbar() {
             }
           }}
         >
-          {courses.map((course) => (
-            <MenuItem 
-              key={course.id}
-              onClick={handleClose}
-              sx={{
-                color: 'white',
-                width: '100%',
-                '&:hover': {
-                  background: 'rgba(255, 255, 255, 0.1)'
-                }
-              }}
-            >
-              <Link 
-                href={`/record/${course.id}`} 
-                className="no-underline text-white w-full"
+          {loading ? (
+            <MenuItem sx={{ color: 'white' }}>Loading courses...</MenuItem>
+          ) : (
+            courses.map((course) => (
+              <MenuItem 
+                key={course.id}
+                onClick={handleClose}
+                sx={{
+                  color: 'white',
+                  width: '100%',
+                  '&:hover': {
+                    background: 'rgba(255, 255, 255, 0.1)'
+                  }
+                }}
               >
-                {course.name}
-              </Link>
-            </MenuItem>
-          ))}
+                <Link 
+                  href={`/record/${course.id}`} 
+                  className="no-underline text-white w-full"
+                >
+                  {course.name}
+                </Link>
+              </MenuItem>
+            ))
+          )}
         </Menu>
       </Toolbar>
     </AppBar>

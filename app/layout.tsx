@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import 'regenerator-runtime/runtime'
-import { initializeDatabase } from "@/lib/db";
+// import { initializeDatabase } from "@/lib/db";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +20,7 @@ export default async function RootLayout({
 }>) {
   try {
     // Initialize database on app load
-    await initializeDatabase();
+    // await initializeDatabase();
   } catch (error) {
     console.error("Failed to initialize database:", error);
     // You might want to handle this error more gracefully
