@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Card, CardContent, CardHeader } from '@mui/material';
+import { Button, Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { Psychology, Description, Mic } from '@mui/icons-material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PhotoCameraBackIcon from '@mui/icons-material/PhotoCameraBack';
@@ -13,22 +13,49 @@ export default function Component() {
   ])
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-[1fr_1fr_300px] gap-6">
+      <main className="container mx-auto px-6 py-12">
+        <div className="grid grid-cols-[1fr_1fr_300px] gap-8">
           {/* Left Column - Notes */}
-          <Card className="bg-white shadow-lg">
+          <Card 
+            elevation={0}
+            sx={{ 
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8))',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '24px',
+              border: '1px solid rgba(62, 83, 160, 0.1)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                boxShadow: '0 8px 32px rgba(31, 38, 135, 0.1)',
+                transform: 'translateY(-2px)',
+              }
+            }}
+          >
             <CardHeader 
-              className="border-b text-[#3E53A0]"
-              avatar={<DescriptionIcon className="h-5 w-5" />}
-              title="Notes"
+              className="border-b border-gray-100"
+              avatar={
+                <DescriptionIcon 
+                  sx={{ 
+                    color: '#3E53A0',
+                    fontSize: '1.5rem'
+                  }} 
+                />
+              }
+              title={
+                <Typography variant="h6" sx={{ 
+                  color: '#3E53A0',
+                  fontWeight: 600,
+                  fontSize: '1.1rem'
+                }}>
+                  Notes
+                </Typography>
+              }
             />
-            <CardContent className="p-4">
-              <div className="h-[calc(100vh-12rem)] overflow-auto">
-                {/* Add note content here */}
+            <CardContent className="p-6">
+              <div className="h-[calc(100vh-12rem)] overflow-auto custom-scrollbar">
                 <div className="prose max-w-none">
-                  <p>Your notes will appear here...</p>
+                  <p className="text-gray-600">Your notes will appear here...</p>
                 </div>
               </div>
             </CardContent>
@@ -36,29 +63,80 @@ export default function Component() {
 
           {/* Middle Column - Audio Transcript and Player */}
           <div className="flex flex-col gap-6">
-            <Card className="bg-white shadow-lg flex-1">
+            <Card 
+              elevation={0}
+              sx={{ 
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8))',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(62, 83, 160, 0.1)',
+                flex: 1,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  boxShadow: '0 8px 32px rgba(31, 38, 135, 0.1)',
+                  transform: 'translateY(-2px)',
+                }
+              }}
+            >
               <CardHeader 
-                className="border-b text-[#3E53A0]"
-                avatar={<Mic className="h-5 w-5" />}
-                title="Audio Transcript"
+                className="border-b border-gray-100"
+                avatar={
+                  <Mic 
+                    sx={{ 
+                      color: '#3E53A0',
+                      fontSize: '1.5rem'
+                    }} 
+                  />
+                }
+                title={
+                  <Typography variant="h6" sx={{ 
+                    color: '#3E53A0',
+                    fontWeight: 600,
+                    fontSize: '1.1rem'
+                  }}>
+                    Audio Transcript
+                  </Typography>
+                }
               />
-              <CardContent className="p-4">
-                <div className="h-[calc(100vh-18rem)] overflow-auto">
-                  {/* Add transcript content here */}
+              <CardContent className="p-6">
+                <div className="h-[calc(100vh-18rem)] overflow-auto custom-scrollbar">
                   <p className="text-gray-600">Transcript will appear here...</p>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-white shadow-lg">
+            <Card 
+              elevation={0}
+              sx={{ 
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8))',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(62, 83, 160, 0.1)',
+              }}
+            >
               <CardHeader 
-                className="border-b text-[#3E53A0]"
-                avatar={<Mic className="h-5 w-5" />}
-                title="Audio File"
+                className="border-b border-gray-100"
+                avatar={
+                  <Mic 
+                    sx={{ 
+                      color: '#3E53A0',
+                      fontSize: '1.5rem'
+                    }} 
+                  />
+                }
+                title={
+                  <Typography variant="h6" sx={{ 
+                    color: '#3E53A0',
+                    fontWeight: 600,
+                    fontSize: '1.1rem'
+                  }}>
+                    Audio File
+                  </Typography>
+                }
               />
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <audio controls className="w-full">
+                  <audio controls className="w-full rounded-full">
                     <source src="" type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
@@ -68,23 +146,49 @@ export default function Component() {
           </div>
 
           {/* Right Column - Scrollable Images */}
-          <div className="space-y-6">
-            <Card className="bg-white shadow-lg">
-              <CardHeader 
-                className="border-b text-[#3E53A0]"
-                avatar={<PhotoCameraBackIcon className="h-5 w-5" />}
-                title="Scrollable Images"
-              />
-              <CardContent className="p-4">
-                <div className="grid gap-4 h-[calc(100vh-18rem)] overflow-auto">
-                  {/* Example image placeholders */}
-                  <img src="/placeholder.svg?height=200&width=200" alt="Study material 1" className="w-full rounded-lg" />
-                  <img src="/placeholder.svg?height=200&width=200" alt="Study material 2" className="w-full rounded-lg" />
-                  <img src="/placeholder.svg?height=200&width=200" alt="Study material 3" className="w-full rounded-lg" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card 
+            elevation={0}
+            sx={{ 
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8))',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '24px',
+              border: '1px solid rgba(62, 83, 160, 0.1)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                boxShadow: '0 8px 32px rgba(31, 38, 135, 0.1)',
+                transform: 'translateY(-2px)',
+              }
+            }}
+          >
+            <CardHeader 
+              className="border-b border-gray-100"
+              avatar={
+                <PhotoCameraBackIcon 
+                  sx={{ 
+                    color: '#3E53A0',
+                    fontSize: '1.5rem'
+                  }} 
+                />
+              }
+              title={
+                <Typography variant="h6" sx={{ 
+                  color: '#3E53A0',
+                  fontWeight: 600,
+                  fontSize: '1.1rem'
+                }}>
+                  Snapshots
+                </Typography>
+              }
+            />
+            <CardContent className="p-6">
+              <div className="grid gap-6 h-[calc(100vh-18rem)] overflow-auto custom-scrollbar">
+                {/* Example image placeholders */}
+                <img src="/placeholder.svg?height=200&width=200" alt="Study material 1" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
+                <img src="/placeholder.svg?height=200&width=200" alt="Study material 2" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
+                <img src="/placeholder.svg?height=200&width=200" alt="Study material 3" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
