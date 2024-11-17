@@ -44,7 +44,7 @@ export async function POST(
         break;
 
       case 'snapshot':
-        // Insert into snapshots table
+        console.log('Creating snapshot with:', { recordingId, cid });
         const snapshotId = uuidv4();
         await db.insert(snapshots).values({
           id: snapshotId,
@@ -53,6 +53,7 @@ export async function POST(
           userId: 'user_placeholder',
           createdAt: new Date().toISOString()
         });
+        console.log('Snapshot created successfully:', snapshotId);
         break;
 
       default:
@@ -70,9 +71,9 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error("Media handler error:", error);
+    console.error('Media endpoint error:', error);
     return NextResponse.json(
-      { error: "Failed to update media", details: error instanceof Error ? error.message : String(error) },
+      { error: "Failed to process media", details: error.message },
       { status: 500 }
     );
   }

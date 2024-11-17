@@ -6,6 +6,9 @@ import { Psychology, Description, Mic } from '@mui/icons-material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PhotoCameraBackIcon from '@mui/icons-material/PhotoCameraBack';
 import { useState, useEffect } from "react"
+import MDEditor from '@uiw/react-md-editor';
+import SaveIcon from '@mui/icons-material/Save';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface LectureData {
   id: string;
@@ -27,6 +30,10 @@ interface LectureData {
     transcriptCid: string | null;
     summary: string | null;
   }[];
+  images?: {
+    id: string;
+    url: string;
+  }[];
 }
 
 interface RecordingData {
@@ -41,6 +48,8 @@ export default function LectureIdPage() {
   const [recordingData, setRecordingData] = useState<RecordingData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesContent, setNotesContent] = useState('');
 
   useEffect(() => {
     console.log('Lecture params changed:', { courseId: params.courseId, lectureId: params.lectureId });
@@ -134,6 +143,29 @@ export default function LectureIdPage() {
     };
   }, [params.courseId, params.lectureId]);
 
+  useEffect(() => {
+    if (recordingData.summary) {
+      setNotesContent(recordingData.summary);
+    }
+  }, [recordingData.summary]);
+
+  const handleSaveNotes = async () => {
+    try {
+      const response = await fetch(`/api/courses/${params.courseId}/lecture/${params.lectureId}/notes`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes: notesContent }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to save notes');
+      setIsEditingNotes(false);
+    } catch (error) {
+      console.error('Failed to save notes:', error);
+    }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
       <Typography>Loading lecture data...</Typography>
@@ -203,10 +235,44 @@ export default function LectureIdPage() {
             <CardContent className="p-4">
               <div className="h-[calc(100vh-24rem)] overflow-auto custom-scrollbar">
                 <div className="prose max-w-none">
-                  {lectureData.notes ? (
-                    <div dangerouslySetInnerHTML={{ __html: lectureData.notes }} />
+                  <div className="flex justify-end mb-4">
+                    {isEditingNotes ? (
+                      <Button
+                        startIcon={<SaveIcon />}
+                        onClick={handleSaveNotes}
+                        variant="contained"
+                        sx={{ 
+                          bgcolor: '#3E53A0',
+                          '&:hover': { bgcolor: '#5C71BE' }
+                        }}
+                      >
+                        Save Notes
+                      </Button>
+                    ) : (
+                      <Button
+                        startIcon={<EditIcon />}
+                        onClick={() => setIsEditingNotes(true)}
+                        variant="outlined"
+                        sx={{ 
+                          color: '#3E53A0',
+                          borderColor: '#3E53A0',
+                          '&:hover': { borderColor: '#5C71BE' }
+                        }}
+                      >
+                        Edit Notes
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {isEditingNotes ? (
+                    <MDEditor
+                      value={notesContent}
+                      onChange={(value) => setNotesContent(value || '')}
+                      height={500}
+                      preview="edit"
+                    />
                   ) : (
-                    <p className="text-gray-600">No notes available yet...</p>
+                    <MDEditor.Markdown source={notesContent} />
                   )}
                 </div>
               </div>

@@ -8,47 +8,37 @@ export async function GET(
   { params }: { params: { courseId: string; lectureId: string } }
 ) {
   try {
-    await initializeDatabase('system');
-
-    // Get lecture with recordings and their details
+    const db = await initializeDatabase('system');
+    
+    // Get lecture details
     const lecture = await db
-      .select({
-        id: lectures.id,
-        courseId: lectures.courseId,
-        title: lectures.title,
-        description: lectures.description,
-        date: lectures.date,
-        userId: lectures.userId,
-        createdAt: lectures.createdAt,
-        updatedAt: lectures.updatedAt,
-      })
+      .select()
       .from(lectures)
-      .where(
-        and(
-          eq(lectures.id, params.lectureId),
-          eq(lectures.courseId, params.courseId)
-        )
-      );
+      .where(eq(lectures.id, params.lectureId));
 
-    if (!lecture || lecture.length === 0) {
-      return NextResponse.json(
-        { error: "Lecture not found" },
-        { status: 404 }
-      );
+    if (!lecture.length) {
+      return NextResponse.json({ error: "Lecture not found" }, { status: 404 });
     }
 
-    // Get recordings with their media details
+    // Get recordings with their details
     const recordingsWithDetails = await db
-      .select({
-        id: recordings.id,
-        status: recordings.status,
-        startedAt: recordings.startedAt,
-        recordingCid: recordings.recordingCid,
-        transcriptCid: recordings.transcriptCid,
-        summary: recordings.summary,
-      })
+      .select()
       .from(recordings)
       .where(eq(recordings.lectureId, params.lectureId));
+
+    // Get snapshots for all recordings
+    const allSnapshots = await db
+      .select()
+      .from(snapshots)
+      .where(
+        eq(snapshots.recordingId, recordingsWithDetails[recordingsWithDetails.length - 1]?.id)
+      );
+
+    // Map snapshots to include URL
+    const images = allSnapshots.map(snapshot => ({
+      id: snapshot.id,
+      url: `https://gateway.pinata.cloud/ipfs/${snapshot.imageCid}`
+    }));
 
     // Get the latest recording with media
     const latestRecording = recordingsWithDetails
@@ -60,7 +50,8 @@ export async function GET(
       recordingCid: latestRecording?.recordingCid || null,
       transcriptCid: latestRecording?.transcriptCid || null,
       summary: latestRecording?.summary || null,
-      recordings: recordingsWithDetails
+      recordings: recordingsWithDetails,
+      images
     });
   } catch (error) {
     console.error("[LECTURE_GET]", error);
