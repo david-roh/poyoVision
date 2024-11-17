@@ -3,7 +3,6 @@
 import { Button, Card, CardContent, Typography } from '@mui/material';
 import { PhotoCamera, Flag, Mic, Videocam } from '@mui/icons-material';
 import { useState, useEffect, useRef } from "react"
-
 export default function Component() {
   const [isRecording, setIsRecording] = useState(false)
   const [transcription, setTranscription] = useState<string[]>([
@@ -36,7 +35,7 @@ export default function Component() {
       console.error('Error getting video devices:', err)
     }
   }
-
+  // Start webcam when device is selected
   // Get devices when component mounts
   useEffect(() => {
     getVideoDevices()
@@ -46,7 +45,7 @@ export default function Component() {
       navigator.mediaDevices.removeEventListener('devicechange', getVideoDevices)
     }
   }, [])
-
+          audio: false
   // Start webcam when device is selected
   useEffect(() => {
     async function setupWebcam() {
@@ -54,7 +53,7 @@ export default function Component() {
         console.log('No device selected')
         return
       }
-
+      }
       try {
         console.log('Attempting to access device:', selectedDevice)
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -72,9 +71,9 @@ export default function Component() {
         console.error('Error accessing webcam:', err)
       }
     }
-
+      console.error("Video or canvas element not found.");
     setupWebcam()
-
+    }
     // Cleanup function
     return () => {
       if (videoRef.current?.srcObject) {
@@ -83,7 +82,7 @@ export default function Component() {
       }
     }
   }, [selectedDevice])
-
+      canvas.width = videoRef.current.videoWidth;
   return (
     <div>
       {/* Main Content */}
@@ -161,7 +160,7 @@ export default function Component() {
               </Button>
             </div>
           </div>
-
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
           {/* Live Transcription */}
           <Card>
             <CardContent sx={{ p: 3 }}>
