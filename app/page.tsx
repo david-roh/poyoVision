@@ -6,6 +6,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook'
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { useUser } from "@clerk/nextjs";
 
 interface Course {
 	id: string;
@@ -19,6 +20,12 @@ export default function Home() {
 	const { isLoaded, isSignedIn, user } = useUser();
 	const [courses, setCourses] = useState<Course[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [file, setFile] = useState("");
+	const [cid, setCid] = useState("");
+	const [uploading, setUploading] = useState(false);
+	const { isLoaded, isSignedIn, user } = useUser();
+
+	const inputFile: any = useRef(null);
 
 	useEffect(() => {
 		const initializeAndFetchCourses = async () => {
