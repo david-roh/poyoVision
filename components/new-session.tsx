@@ -1,10 +1,11 @@
 'use client'
 
-import { Button, Card, CardContent, Typography } from '@mui/material';
+import { Button, Card, CardContent, Typography, Popover, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { PhotoCamera, Flag, Mic, Videocam } from '@mui/icons-material';
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
+import ReactMarkdown from 'react-markdown';
 
 interface NewSessionProps {
   courseId: string;
@@ -19,6 +20,7 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
   const [transcription, setTranscription] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
+  
   const [selectedDevice, setSelectedDevice] = useState<string>('')
 
   const [isMounted, setIsMounted] = useState(false)
@@ -34,6 +36,14 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
   } = useSpeechRecognition()
 
   const [latestSnapshot, setLatestSnapshot] = useState<string | null>(null)
+  const [selectedText, setSelectedText] = useState('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [definition, setDefinition] = useState<string | null>(null);
+  const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
+  const [sessionDefinitions, setSessionDefinitions] = useState<Array<{term: string, definition: string}>>([]);
+  const [sessionSnapshots, setSessionSnapshots] = useState<Array<{ url: string, timestamp: string }>>([]);
 
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
@@ -256,7 +266,8 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
           return response.json()
         })
         .then(data => {
-          console.log('Transcript Summary:', data.choices[0].message.content)
+          setSessionSummary(data.choices[0].message.content);
+          setShowSummaryModal(true);
         })
         .catch(error => {
           console.error('Error getting summary:', error)
@@ -440,6 +451,48 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
     }
   };
 
+  const handleTextSelection = async (event: MouseEvent) => {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+
+    if (selectedText) {
+      setSelectedText(selectedText);
+      setAnchorEl(event.target as HTMLElement);
+    } else {
+      setAnchorEl(null);
+    }
+  };
+
+  const handleGetDefinition = async () => {
+    setIsLoadingDefinition(true);
+    try {
+      const response = await fetch('/api/definition', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ highlightedText: selectedText }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get definition');
+      
+      const data = await response.json();
+      const newDefinition = data.choices[0].message.content;
+      setDefinition(newDefinition);
+      // Store the definition for the session summary
+      setSessionDefinitions(prev => [...prev, { term: selectedText, definition: newDefinition }]);
+    } catch (error) {
+      console.error('Error getting definition:', error);
+    } finally {
+      setIsLoadingDefinition(false);
+    }
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+    setDefinition(null);
+  };
+
   return (
     <div>
       {/* Main Content */}
@@ -493,7 +546,7 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                   backgroundColor: '#3E53A0',
                   flex: 1,
                   py: 2,
-                  fontSize: '1.125rem'
+                  fontSize: '1.125rem',
                 }}
                 onClick={takeSnapshotAndUpload}
                 startIcon={<PhotoCamera />}
@@ -544,6 +597,7 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                   <div
                     key={i}
                     className="rounded-lg bg-white p-4 text-sm shadow-sm border border-[#3E53A0]/10"
+                    onMouseUp={(e) => handleTextSelection(e as unknown as MouseEvent)}
                   >
                     {text}
                   </div>
@@ -553,6 +607,52 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                     {interimTranscript}
                   </div>
                 )}
+
+                <Popover
+                  open={Boolean(anchorEl)}
+                  anchorEl={anchorEl}
+                  onClose={handleClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                  }}
+                >
+                  <div className="p-4 max-w-sm">
+                    {!definition ? (
+                      <div className="flex flex-col gap-3">
+                        <Typography variant="body2">
+                          Would you like to get a definition for:
+                          <br />
+                          <strong>"{selectedText}"</strong>?
+                        </Typography>
+                        <Button
+                          onClick={handleGetDefinition}
+                          disabled={isLoadingDefinition}
+                          variant="contained"
+                          size="small"
+                          sx={{ backgroundColor: '#3E53A0' }}
+                        >
+                          {isLoadingDefinition ? 'Loading...' : 'Get Definition'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <Typography variant="body2">
+                          <strong>Definition:</strong>
+                        </Typography>
+                        <div className="prose prose-sm max-w-none">
+                          <ReactMarkdown>
+                            {definition}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Popover>
               </div>
             </CardContent>
           </Card>
@@ -578,6 +678,57 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
           </button>
         </div>
       )}
+
+      {/* Summary Modal */}
+      <Dialog
+        open={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Session Summary</DialogTitle>
+        <DialogContent>
+          <div className="prose max-w-none">
+            <h1>Study Notes</h1>
+            <ReactMarkdown>{sessionSummary || ''}</ReactMarkdown>
+            
+            {sessionDefinitions.length > 0 && (
+              <>
+                <h2 className="mt-8"><hr className="mb-6 border-t-2 border-gray-300" />Definitions</h2>
+                {sessionDefinitions.map((def, index) => (
+                  <div key={index} className="mb-6">
+                    <h3 className="font-bold">{def.term}</h3>
+                    <ReactMarkdown>{def.definition}</ReactMarkdown>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {sessionSnapshots.length > 0 && (
+              <>
+                <h2 className="mt-8"><hr className="mb-6 border-t-2 border-gray-300" />Captured Images</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                  {sessionSnapshots.map((snapshot, index) => (
+                    <div key={index} className="relative aspect-video">
+                      <img 
+                        src={snapshot.url} 
+                        alt={`Snapshot ${index + 1}`}
+                        className="rounded-lg shadow-md w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        {snapshot.timestamp}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSummaryModal(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }

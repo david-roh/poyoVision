@@ -75,7 +75,9 @@ export default function Home() {
 			});
 
 			if (response.ok) {
-				router.refresh();
+				setCourses(prevCourses => 
+					prevCourses.filter(course => course.id !== deleteDialog.courseId)
+				);
 			} else {
 				throw new Error('Failed to delete course');
 			}
