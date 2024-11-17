@@ -42,7 +42,7 @@ export async function GET(
 
     // Get the latest recording with media
     const latestRecording = recordingsWithDetails
-      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+      .sort((a, b) => new Date(b.startedAt || '').getTime() - new Date(a.startedAt || '').getTime())
       .find(r => r.recordingCid || r.transcriptCid || r.summary);
 
     return NextResponse.json({

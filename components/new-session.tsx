@@ -1,11 +1,13 @@
 'use client'
 
 import { Button, Card, CardContent, Typography, Popover, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { PhotoCamera, Flag, Mic, Videocam } from '@mui/icons-material';
+import { PhotoCamera, Mic, Videocam } from '@mui/icons-material';
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 import ReactMarkdown from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
 
 interface NewSessionProps {
   courseId: string;
@@ -51,6 +53,13 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   const [status, setStatus] = useState<'idle' | 'recording' | 'processing' | 'completed' | 'error'>('idle');
+
+  const [imageAnalyses, setImageAnalyses] = useState<Array<{
+    timestamp: string,
+    summary: string
+  }>>([]);
+
+  const [imageUrls, setImageUrls] = useState<Array<string>>([]);
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
@@ -321,26 +330,41 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
     formData.append('file', file);
 
     try {
-      console.log('Uploading to Pinata...');
+      // Upload to Pinata
       const uploadResponse = await fetch('/api/files', {
         method: 'POST',
         body: formData
       });
 
-      console.log('Pinata response status:', uploadResponse.status);
       const uploadData = await uploadResponse.json();
-      console.log('Pinata upload data:', uploadData);
+      const imageUrl = `https://gateway.pinata.cloud/ipfs/${uploadData.IpfsHash}`;
+      setImageUrls(prev => [...prev, imageUrl]);
+      setLatestSnapshot(imageUrl);
 
+      // Get image analysis from vision API
+      const visionResponse = await fetch('/api/vision', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ imageUrl })
+      });
+
+      if (!visionResponse.ok) {
+        throw new Error('Failed to analyze image');
+      }
+
+      const visionData = await visionResponse.json();
+      const imageSummary = visionData.choices[0].message.content;
+
+      // Store the analysis with timestamp
+      setImageAnalyses(prev => [...prev, {
+        timestamp: new Date().toLocaleTimeString(),
+        summary: imageSummary
+      }]);
+
+      // Save to media endpoint
       if (courseId && lectureId) {
-        console.log('Saving to media endpoint:', {
-          url: `/api/courses/${courseId}/lectures/${lectureId}/media`,
-          payload: {
-            type: 'snapshot',
-            recordingId,
-            cid: uploadData.IpfsHash
-          }
-        });
-
         const response = await fetch(`/api/courses/${courseId}/lectures/${lectureId}/media`, {
           method: 'POST',
           headers: {
@@ -353,14 +377,8 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
           })
         });
 
-        console.log('Media endpoint response:', {
-          status: response.status,
-          statusText: response.statusText
-        });
-
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('Media endpoint error:', errorData);
           throw new Error('Failed to save snapshot metadata');
         }
       }
@@ -573,21 +591,6 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                 Take Snapshot
               </Button>
               <Button 
-                variant="outlined" 
-                color="primary"
-                sx={{ 
-                  gap: 1,
-                  borderColor: 'rgba(62, 83, 160, 0.3)',
-                  color: 'primary',
-                  flex: 1,
-                  py: 2,
-                  fontSize: '1.125rem'
-                }}
-              >
-                <Flag />
-                Flag
-              </Button>
-              <Button 
                 variant="contained" 
                 color={sessionActive ? "error" : "success"}
                 onClick={() => {
@@ -664,7 +667,7 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                           <strong>Definition:</strong>
                         </Typography>
                         <div className="prose prose-sm max-w-none">
-                          <ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                             {definition}
                           </ReactMarkdown>
                         </div>
@@ -716,7 +719,6 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                 <h2 className="mt-8"><hr className="mb-6 border-t-2 border-gray-300" />Definitions</h2>
                 {sessionDefinitions.map((def, index) => (
                   <div key={index} className="mb-6">
-                    <h3 className="font-bold">{def.term}</h3>
                     <ReactMarkdown>{def.definition}</ReactMarkdown>
                   </div>
                 ))}
@@ -740,6 +742,33 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                     </div>
                   ))}
                 </div>
+              </>
+            )}
+
+            {imageAnalyses.length > 0 && (
+              <>
+                <h2 className="mt-8">
+                  <hr className="mb-6 border-t-2 border-gray-300" />
+                  Image Analyses
+                </h2>
+                {imageAnalyses.map((analysis, index) => (
+                  <div key={index} className="mb-6 grid grid-cols-2 gap-4">
+                    <div className="relative aspect-video">
+                      <img 
+                        src={imageUrls[index]} 
+                        alt={`Analysis ${index + 1}`}
+                        className="rounded-lg shadow-md w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        {analysis.timestamp}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm text-gray-500 mb-2">Analysis</h3>
+                      <ReactMarkdown>{analysis.summary}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
               </>
             )}
           </div>

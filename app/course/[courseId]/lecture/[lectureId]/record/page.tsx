@@ -45,8 +45,8 @@ export default function RecordPage() {
   }
 
   return <NewSession 
-    courseId={params.courseId} 
-    lectureId={params.lectureId} 
+    courseId={params.courseId.toString()} 
+    lectureId={params.lectureId.toString()} 
     recordingId={recordingId}
   />;
 } 
