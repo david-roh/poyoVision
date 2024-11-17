@@ -131,7 +131,6 @@ export default function Navbar() {
               <nav className="flex gap-2 md:gap-4 lg:gap-6">
                 {[
                   { href: "/", label: "Home" },
-                  { href: "/new-session", label: "Video Dashboard" }
                 ].map((link) => (
                   <Link key={link.href} href={link.href} className="no-underline">
                     <Button 
