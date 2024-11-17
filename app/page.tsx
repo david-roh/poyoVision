@@ -21,9 +21,6 @@ export default function Home() {
 	const { isLoaded, isSignedIn, user } = useUser();
 	const [courses, setCourses] = useState<Course[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [file, setFile] = useState("");
-	const [cid, setCid] = useState("");
-	const [uploading, setUploading] = useState(false);
 	const [deleteDialog, setDeleteDialog] = useState<{open: boolean, courseId: string | null}>({
 		open: false,
 		courseId: null
@@ -63,7 +60,7 @@ export default function Home() {
 	}, [isLoaded, isSignedIn, user?.id]);
 
 	const handleDelete = async () => {
-		if (!deleteDialog.courseId) return;
+		if (!deleteDialog.courseId || !user?.id) return;
 
 		try {
 			const response = await fetch('/api/courses', {
@@ -71,7 +68,10 @@ export default function Home() {
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ id: deleteDialog.courseId }),
+				body: JSON.stringify({ 
+					id: deleteDialog.courseId,
+					userId: user.id
+				}),
 			});
 
 			if (response.ok) {
@@ -79,7 +79,8 @@ export default function Home() {
 					prevCourses.filter(course => course.id !== deleteDialog.courseId)
 				);
 			} else {
-				throw new Error('Failed to delete course');
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to delete course');
 			}
 		} catch (error) {
 			console.error(error);
