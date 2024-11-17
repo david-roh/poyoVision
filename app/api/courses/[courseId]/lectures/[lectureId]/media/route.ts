@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
-import { db } from '@/lib/db/index';
-import { recordings } from '@/lib/db/schema';
+import { initializeDatabase } from '@/lib/db/index';
+import { recordings, snapshots } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(
   request: Request,
   { params }: { params: { courseId: string; lectureId: string } }
 ) {
+  console.log('Media endpoint called with params:', params);
+  
   try {
-    // Explicitly parse as JSON
+    const db = await initializeDatabase('system');
     const body = await request.json();
+    console.log('Received media request body:', body);
+
     const { type, recordingId, cid } = body;
 
     if (!type || !recordingId || !cid) {
@@ -20,21 +25,36 @@ export async function POST(
       );
     }
 
-    // Update database based on media type
-    const updateData: Record<string, string> = {};
+    console.log('Processing media type:', type);
+    
+    // Handle different media types
     switch (type) {
       case 'audio':
-        updateData.recordingCid = cid;
-        break;
       case 'transcript':
-        updateData.transcriptCid = cid;
-        break;
       case 'summary':
-        updateData.summaryCid = cid;
+        // Update recordings table
+        const updateData = type === 'audio' ? { recordingCid: cid } :
+                         type === 'transcript' ? { transcriptCid: cid } :
+                         { summary: cid };
+        
+        await db
+          .update(recordings)
+          .set(updateData)
+          .where(eq(recordings.id, recordingId));
         break;
+
       case 'snapshot':
-        updateData.snapshotCid = cid;
+        // Insert into snapshots table
+        const snapshotId = uuidv4();
+        await db.insert(snapshots).values({
+          id: snapshotId,
+          recordingId,
+          imageCid: cid,
+          userId: 'user_placeholder',
+          createdAt: new Date().toISOString()
+        });
         break;
+
       default:
         return NextResponse.json(
           { error: "Invalid media type" },
@@ -42,20 +62,15 @@ export async function POST(
         );
     }
 
-    await db.update(recordings)
-      .set(updateData)
-      .where(eq(recordings.id, recordingId));
-
     return NextResponse.json({ 
       success: true,
-      updated: {
-        type,
-        recordingId,
-        ...updateData
-      }
+      type,
+      recordingId,
+      cid
     });
+
   } catch (error) {
-    console.error("Failed to update media:", error);
+    console.error("Media handler error:", error);
     return NextResponse.json(
       { error: "Failed to update media", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

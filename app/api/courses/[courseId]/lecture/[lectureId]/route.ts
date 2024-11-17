@@ -10,53 +10,56 @@ export async function GET(
   try {
     await initializeDatabase('system');
 
-    // Get lecture details
+    // Get lecture with recordings and their details
     const lecture = await db
-      .select()
+      .select({
+        id: lectures.id,
+        courseId: lectures.courseId,
+        title: lectures.title,
+        description: lectures.description,
+        date: lectures.date,
+        userId: lectures.userId,
+        createdAt: lectures.createdAt,
+        updatedAt: lectures.updatedAt,
+      })
       .from(lectures)
       .where(
         and(
-          eq(lectures.courseId, params.courseId),
-          eq(lectures.id, params.lectureId)
+          eq(lectures.id, params.lectureId),
+          eq(lectures.courseId, params.courseId)
         )
-      )
-      .limit(1);
+      );
 
-    if (!lecture?.length) {
+    if (!lecture || lecture.length === 0) {
       return NextResponse.json(
         { error: "Lecture not found" },
         { status: 404 }
       );
     }
 
-    // Get recordings for this lecture
-    const recordingsData = await db
-      .select()
+    // Get recordings with their media details
+    const recordingsWithDetails = await db
+      .select({
+        id: recordings.id,
+        status: recordings.status,
+        startedAt: recordings.startedAt,
+        recordingCid: recordings.recordingCid,
+        transcriptCid: recordings.transcriptCid,
+        summary: recordings.summary,
+      })
       .from(recordings)
       .where(eq(recordings.lectureId, params.lectureId));
 
-    // Get all snapshots and notes for each recording
-    const recordingsWithDetails = await Promise.all(
-      recordingsData.map(async (recording) => {
-        const [recordingSnapshots, recordingNotes] = await Promise.all([
-          db.select()
-            .from(snapshots)
-            .where(eq(snapshots.recordingId, recording.id)),
-          db.select()
-            .from(notes)
-            .where(eq(notes.lectureId, params.lectureId))
-        ]);
-
-        return {
-          ...recording,
-          snapshots: recordingSnapshots,
-          notes: recordingNotes
-        };
-      })
-    );
+    // Get the latest recording with media
+    const latestRecording = recordingsWithDetails
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+      .find(r => r.recordingCid || r.transcriptCid || r.summary);
 
     return NextResponse.json({
       ...lecture[0],
+      recordingCid: latestRecording?.recordingCid || null,
+      transcriptCid: latestRecording?.transcriptCid || null,
+      summary: latestRecording?.summary || null,
       recordings: recordingsWithDetails
     });
   } catch (error) {

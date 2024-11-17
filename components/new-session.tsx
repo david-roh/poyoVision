@@ -297,7 +297,12 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
   }, [])
 
   const takeSnapshotAndUpload = async () => {
-    if (!videoRef.current) return;
+    console.log('Starting snapshot upload with:', { courseId, lectureId, recordingId });
+    
+    if (!videoRef.current) {
+      console.log('No video reference found');
+      return;
+    }
     
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth;
@@ -316,37 +321,51 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
     formData.append('file', file);
 
     try {
-      // First upload to Pinata through /api/files
+      console.log('Uploading to Pinata...');
       const uploadResponse = await fetch('/api/files', {
         method: 'POST',
         body: formData
       });
 
-      if (!uploadResponse.ok) throw new Error('Failed to upload to Pinata');
-      
+      console.log('Pinata response status:', uploadResponse.status);
       const uploadData = await uploadResponse.json();
-      setLatestSnapshot(URL.createObjectURL(imageBlob));
+      console.log('Pinata upload data:', uploadData);
 
-      // If we have courseId and lectureId, save to snapshots table
       if (courseId && lectureId) {
-        const response = await fetch(`/api/courses/${courseId}/lecture/${lectureId}/media`, {
+        console.log('Saving to media endpoint:', {
+          url: `/api/courses/${courseId}/lectures/${lectureId}/media`,
+          payload: {
+            type: 'snapshot',
+            recordingId,
+            cid: uploadData.IpfsHash
+          }
+        });
+
+        const response = await fetch(`/api/courses/${courseId}/lectures/${lectureId}/media`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             type: 'snapshot',
-            recordingId: recordingId, // You'll need to track this in state
-            imageCid: uploadData.cid // CID from Pinata response
+            recordingId,
+            cid: uploadData.IpfsHash
           })
         });
 
+        console.log('Media endpoint response:', {
+          status: response.status,
+          statusText: response.statusText
+        });
+
         if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Media endpoint error:', errorData);
           throw new Error('Failed to save snapshot metadata');
         }
       }
     } catch (error) {
-      console.error('Failed to handle snapshot:', error);
+      console.error('Snapshot error details:', error);
       setError('Failed to save snapshot');
     }
   };
