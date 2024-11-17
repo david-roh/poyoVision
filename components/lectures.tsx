@@ -110,7 +110,7 @@ export default function Component() {
           </div>
 
           {/* Right Column - Chat Bot */}
-          <Card className="bg-white shadow-lg">
+          <Card className="bg-white shadow-lg" sx={{ borderRadius: '12px' }}>
             <CardHeader 
               title={
                 <div className="text-[#3E53A0] flex items-center gap-2 font-bold text-xl">
@@ -119,6 +119,10 @@ export default function Component() {
                 </div>
               }
               className="border-b"
+              sx={{ 
+                borderTopLeftRadius: '12px',
+                borderTopRightRadius: '12px',
+              }}
             />
             <CardContent>
               <div className="flex flex-col gap-4 h-[calc(100vh-20rem)] p-4">
