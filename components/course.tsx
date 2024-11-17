@@ -13,9 +13,9 @@ export default function Component() {
   ])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-light">
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-12">
+      <main className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-[1fr_1fr_300px] gap-8">
           {/* Left Column - Notes */}
           <Card 
@@ -52,8 +52,8 @@ export default function Component() {
                 </Typography>
               }
             />
-            <CardContent className="p-6">
-              <div className="h-[calc(100vh-12rem)] overflow-auto custom-scrollbar">
+            <CardContent className="p-4">
+              <div className="h-[calc(100vh-24rem)] overflow-auto custom-scrollbar">
                 <div className="prose max-w-none">
                   <p className="text-gray-600">Your notes will appear here...</p>
                 </div>
@@ -98,8 +98,8 @@ export default function Component() {
                   </Typography>
                 }
               />
-              <CardContent className="p-6">
-                <div className="h-[calc(100vh-18rem)] overflow-auto custom-scrollbar">
+              <CardContent className="p-4">
+                <div className="h-[calc(100vh-28rem)] overflow-auto custom-scrollbar">
                   <p className="text-gray-600">Transcript will appear here...</p>
                 </div>
               </CardContent>
@@ -134,7 +134,7 @@ export default function Component() {
                   </Typography>
                 }
               />
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <audio controls className="w-full rounded-full">
                     <source src="" type="audio/mpeg" />
@@ -180,8 +180,8 @@ export default function Component() {
                 </Typography>
               }
             />
-            <CardContent className="p-6">
-              <div className="grid gap-6 h-[calc(100vh-18rem)] overflow-auto custom-scrollbar">
+            <CardContent className="p-4">
+              <div className="grid gap-3 h-[calc(100vh-28rem)] overflow-auto custom-scrollbar">
                 {/* Example image placeholders */}
                 <img src="/placeholder.svg?height=200&width=200" alt="Study material 1" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
                 <img src="/placeholder.svg?height=200&width=200" alt="Study material 2" className="w-full rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200" />
