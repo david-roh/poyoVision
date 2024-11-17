@@ -3,17 +3,28 @@
 import { Button, Card, CardContent, Typography } from '@mui/material';
 import { PhotoCamera, Flag, Mic, Videocam } from '@mui/icons-material';
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from 'next/navigation'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 export default function Component() {
+  const router = useRouter()
   const [isRecording, setIsRecording] = useState(false)
-  const [transcription, setTranscription] = useState<string[]>([
-    "Lorem ipsum dolor sit amet...",
-    "Consectetur adipiscing elit...",
-    "Sed do eiusmod tempor...",
-  ])
+  const [sessionActive, setSessionActive] = useState(false)
+  const [transcription, setTranscription] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDevice, setSelectedDevice] = useState<string>('')
+  const [isMounted, setIsMounted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const {
+    transcript,
+    interimTranscript,
+    finalTranscript,
+    resetTranscript,
+    listening,
+    browserSupportsSpeechRecognition,
+  } = useSpeechRecognition()
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
@@ -67,6 +78,53 @@ export default function Component() {
     }
   }, [selectedDevice])
 
+  // Add this function to handle session end
+  const handleSessionButton = () => {
+    if (sessionActive) {
+      // If session is active, end it and navigate home
+      setSessionActive(false)
+      // setTimeout(() => {
+      //   router.push('/')
+      // }, 500)
+    } else {
+      // If no session, start one
+      setSessionActive(true)
+      startListening()
+    }
+  }
+
+  // Handle speech transcription
+  const startListening = () => {
+    resetTranscript()
+    SpeechRecognition.startListening({
+      continuous: true,
+      interimResults: true,
+    })
+  }
+
+  const stopListening = () => {
+    SpeechRecognition.stopListening()
+  }
+
+  useEffect(() => {
+    if (!browserSupportsSpeechRecognition) {
+      setError("Browser doesn't support speech recognition.")
+    }
+  }, [])
+
+  // Update transcription state when final transcript is available
+  useEffect(() => {
+    if (finalTranscript) {
+      setTranscription((prev) => [...prev, finalTranscript])
+      resetTranscript()
+    }
+  }, [finalTranscript])
+
+  // Add this effect to handle client-side mounting
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   return (
     <div>
       {/* Main Content */}
@@ -95,13 +153,15 @@ export default function Component() {
                 padding: '0 !important', // Remove padding for video
                 aspectRatio: '16/9'
               }}>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
+                {isMounted && (  // Only render video on client-side
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </CardContent>
             </Card>
             
@@ -136,8 +196,16 @@ export default function Component() {
                 <Flag />
                 Flag
               </Button>
-              <Button variant="contained" color="error" sx={{ flex: 1, py: 2, fontSize: '1.125rem' }}>
-                End Session
+              <Button 
+                variant="contained" 
+                color={sessionActive ? "error" : "success"}
+                onClick={() => {
+                  handleSessionButton()
+                  if (sessionActive) stopListening()
+                }}
+                sx={{ flex: 1, py: 2, fontSize: '1.125rem' }}
+              >
+                {sessionActive ? "End Session" : "Start Session"}
               </Button>
             </div>
           </div>
@@ -152,6 +220,7 @@ export default function Component() {
                 </Typography>
               </div>
               <div className="h-[calc(100vh-20rem)] space-y-4 overflow-auto rounded-md bg-[#ECEEF0] p-4 sm:p-6">
+                {error && <Typography color="error">{error}</Typography>}
                 {transcription.map((text, i) => (
                   <div
                     key={i}
@@ -160,6 +229,11 @@ export default function Component() {
                     {text}
                   </div>
                 ))}
+                {interimTranscript && (
+                  <div className="text-gray-500 text-sm">
+                    {interimTranscript}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Button, Card, CardContent } from "@mui/material"
 import MenuBookIcon from '@mui/icons-material/MenuBook'
+import Dictaphone from "@/components/Dictaphone";
 
 export default function Home() {
 	const courses = [
