@@ -7,6 +7,16 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useState } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
 
+const shakeAnimation = `
+  @keyframes shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
+  }
+`;
+
 export default function Navbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -53,12 +63,27 @@ export default function Navbar() {
       <Toolbar sx={{ padding: '0.75rem 2rem' }}>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-4 md:gap-8">
-            <Link href="/" className="no-underline flex items-center gap-2 md:gap-4 hover:scale-105 transition-transform duration-200">
-              <img 
-                src="/poyo-logo.png" 
-                alt="Logo" 
-                className="h-[45px] w-[45px] drop-shadow-lg hover:rotate-3 transition-all duration-300"
-              />
+            <Link href="/" className="no-underline flex items-center gap-2 md:gap-4">
+              <div className="hover-shake">
+                <img 
+                  src="/poyo-logo.png" 
+                  alt="Logo" 
+                  className="h-[35px] w-[35px] md:h-[45px] md:w-[45px] drop-shadow-lg"
+                />
+              </div>
+              <style jsx global>{`
+                @keyframes shake {
+                  0% { transform: rotate(0deg); }
+                  25% { transform: rotate(-10deg); }
+                  50% { transform: rotate(10deg); }
+                  75% { transform: rotate(-10deg); }
+                  100% { transform: rotate(0deg); }
+                }
+
+                .hover-shake:hover {
+                  animation: shake 0.5s ease-in-out;
+                }
+              `}</style>
               <Typography 
                 variant="h5" 
                 sx={{ 
