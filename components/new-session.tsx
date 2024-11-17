@@ -28,12 +28,21 @@ export default function Component() {
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    const videoDevices = devices.filter(device => device.kind === 'videoinput')
-    setVideoDevices(videoDevices)
-    // Set first device as default if none selected
-    if (videoDevices.length && !selectedDevice) {
-      setSelectedDevice(videoDevices[0].deviceId)
+    try {
+      // Request permission first
+      await navigator.mediaDevices.getUserMedia({ video: true })
+      
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      console.log('Available video devices:', videoDevices) // Debug line
+      setVideoDevices(videoDevices)
+      // Set first device as default if none selected
+      if (videoDevices.length && !selectedDevice) {
+        setSelectedDevice(videoDevices[0].deviceId)
+      }
+    } catch (err) {
+      console.error('Error accessing video devices:', err)
+      setError('Failed to access video devices. Please ensure camera permissions are granted.')
     }
   }
 
