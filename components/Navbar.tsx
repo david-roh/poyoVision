@@ -29,23 +29,20 @@ export default function Navbar() {
               PoyoVision
             </Typography>
           </div>
-          <nav>
-            <Link href="/dashboard" passHref>
-              <Button color="inherit">Dashboard</Button>
+          <nav className="flex gap-2">
+            <Link href="/courses" className="no-underline">
+              <Button color="inherit" sx={{ color: 'white' }}>My Dashboard</Button>
             </Link>
-            <Link href="/courses" passHref>
-              <Button color="inherit">My Courses</Button>
+            <Link href="/course" className="no-underline">
+              <Button color="inherit" sx={{ color: 'white' }}>Course</Button>
             </Link>
-            <Link href="/study-dashboard" passHref>
-              <Button color="inherit">Study Dashboard</Button>
-            </Link>
-            <Link href="/video-dashboard" passHref>
-              <Button color="inherit">Video Dashboard</Button>
+            <Link href="/new-session" className="no-underline">
+              <Button color="inherit" sx={{ color: 'white' }}>Video Dashboard</Button>
             </Link>
           </nav>
         </div>
         <div className="ml-auto">
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </Toolbar>
     </AppBar>
