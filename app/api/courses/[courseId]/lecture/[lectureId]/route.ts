@@ -1,61 +1,64 @@
 import { NextResponse } from "next/server";
-
-const dummyLectures = [
-  {
-    id: "1",
-    courseId: "1",
-    name: "Getting Started with React",
-    description: "Setup and basic concepts",
-    notes: "<h2>React Setup Guide</h2><p>In this lecture, we'll cover the essential steps to set up a React project...</p>",
-    transcript: "Welcome to our first lecture on React. Today we'll be covering the fundamentals of setting up a React project...",
-    audioUrl: "/dummy-audio-lecture1.mp3",
-    images: [
-      { url: "https://placeholder.co/400x300" },
-      { url: "https://placeholder.co/400x300" }
-    ],
-    duration: "15:00",
-    videoUrl: "https://example.com/lecture1",
-    position: 1,
-    isCompleted: false
-  },
-  {
-    id: "2",
-    courseId: "1",
-    name: "Components and Props",
-    description: "Understanding React components",
-    notes: "<h2>Components in React</h2><p>Components are the building blocks of React applications...</p>",
-    transcript: "In this lecture, we'll dive deep into React components and how they work...",
-    audioUrl: "/dummy-audio-lecture2.mp3",
-    images: [
-      { url: "https://placeholder.co/400x300" },
-      { url: "https://placeholder.co/400x300" }
-    ],
-    duration: "20:00",
-    videoUrl: "https://example.com/lecture2",
-    position: 2,
-    isCompleted: false
-  }
-];
+import { db, initializeDatabase } from '@/lib/db/index';
+import { lectures, recordings, snapshots, notes } from '@/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(
   req: Request,
   { params }: { params: { courseId: string; lectureId: string } }
 ) {
   try {
-    const lecture = dummyLectures.find(
-      (lecture) => 
-        lecture.courseId === params.courseId && 
-        lecture.id === params.lectureId
-    );
+    await initializeDatabase('system');
 
-    if (!lecture) {
+    // Get lecture details
+    const lecture = await db
+      .select()
+      .from(lectures)
+      .where(
+        and(
+          eq(lectures.courseId, params.courseId),
+          eq(lectures.id, params.lectureId)
+        )
+      )
+      .limit(1);
+
+    if (!lecture?.length) {
       return NextResponse.json(
         { error: "Lecture not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(lecture);
+    // Get recordings for this lecture
+    const recordingsData = await db
+      .select()
+      .from(recordings)
+      .where(eq(recordings.lectureId, params.lectureId));
+
+    // Get all snapshots and notes for each recording
+    const recordingsWithDetails = await Promise.all(
+      recordingsData.map(async (recording) => {
+        const [recordingSnapshots, recordingNotes] = await Promise.all([
+          db.select()
+            .from(snapshots)
+            .where(eq(snapshots.recordingId, recording.id)),
+          db.select()
+            .from(notes)
+            .where(eq(notes.lectureId, params.lectureId))
+        ]);
+
+        return {
+          ...recording,
+          snapshots: recordingSnapshots,
+          notes: recordingNotes
+        };
+      })
+    );
+
+    return NextResponse.json({
+      ...lecture[0],
+      recordings: recordingsWithDetails
+    });
   } catch (error) {
     console.error("[LECTURE_GET]", error);
     return NextResponse.json(

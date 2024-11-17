@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
-import { courses, lectures, sessions, snapshots, notes } from "./schema";
+import { courses, lectures, sessions, snapshots, notes, recordings } from "./schema";
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { backupDatabase, restoreDatabase } from './backup';
@@ -76,9 +76,16 @@ async function createNewDatabase(userId: string) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       user_id TEXT NOT NULL,
-      image_url TEXT DEFAULT NULL,
-      last_accessed DATETIME DEFAULT NULL,
+      image_url TEXT,
+      last_accessed DATETIME,
       status TEXT DEFAULT 'active'
+    );
+
+    CREATE TABLE IF NOT EXISTS course_images (
+      id TEXT PRIMARY KEY,
+      course_id TEXT REFERENCES courses(id),
+      url TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS lectures (
@@ -92,25 +99,25 @@ async function createNewDatabase(userId: string) {
       user_id TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS sessions (
+    CREATE TABLE IF NOT EXISTS recordings (
       id TEXT PRIMARY KEY,
       lecture_id TEXT REFERENCES lectures(id),
       user_id TEXT NOT NULL,
       started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      ended_at DATETIME DEFAULT NULL,
+      ended_at DATETIME,
       status TEXT DEFAULT 'active',
-      transcript_cid TEXT DEFAULT NULL,
-      recording_cid TEXT DEFAULT NULL,
-      summary TEXT DEFAULT NULL
+      recording_cid TEXT,
+      transcript_cid TEXT,
+      summary TEXT
     );
 
     CREATE TABLE IF NOT EXISTS snapshots (
       id TEXT PRIMARY KEY,
-      session_id TEXT REFERENCES sessions(id),
+      recording_id TEXT REFERENCES recordings(id),
       user_id TEXT NOT NULL,
       image_cid TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      notes TEXT DEFAULT NULL
+      notes TEXT
     );
 
     CREATE TABLE IF NOT EXISTS notes (
@@ -121,13 +128,6 @@ async function createNewDatabase(userId: string) {
       content TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS course_images (
-      id TEXT PRIMARY KEY,
-      course_id TEXT REFERENCES courses(id),
-      url TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
