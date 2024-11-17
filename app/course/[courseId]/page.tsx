@@ -118,7 +118,7 @@ export default function CoursePage() {
               </Button>
             </div>
             
-            {courseData.lectures?.map((lecture) => (
+            {courseData.lectures?.map((lecture, index) => (
               <Card 
                 key={lecture.id}
                 sx={{ 
@@ -184,7 +184,7 @@ export default function CoursePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-lg font-semibold text-[#3E53A0] leading-tight">
-                      Lecture {lecture.id}
+                      Lecture {index + 1}
                     </div>
                     <p className="text-base text-gray-500 truncate leading-tight mt-1.5">
                       {lecture.title}
