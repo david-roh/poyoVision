@@ -14,6 +14,7 @@ export default function Component() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDevice, setSelectedDevice] = useState<string>('')
+
   const [isMounted, setIsMounted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,15 +27,18 @@ export default function Component() {
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition()
 
+  const [latestSnapshot, setLatestSnapshot] = useState<string | null>(null)
+
   // Function to get list of video devices
   const getVideoDevices = async () => {
     try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ video: true })
+      // First request permission
+      await navigator.mediaDevices.getUserMedia({ video: true });
       
       const devices = await navigator.mediaDevices.enumerateDevices()
       const videoDevices = devices.filter(device => device.kind === 'videoinput')
-      console.log('Available video devices:', videoDevices) // Debug line
+      console.log('Available video devices:', videoDevices)
+      
       setVideoDevices(videoDevices)
       // Set first device as default if none selected
       if (videoDevices.length && !selectedDevice) {
@@ -45,7 +49,7 @@ export default function Component() {
       setError('Failed to access video devices. Please ensure camera permissions are granted.')
     }
   }
-
+  // Start webcam when device is selected
   // Get devices when component mounts
   useEffect(() => {
     getVideoDevices()
@@ -59,26 +63,32 @@ export default function Component() {
   // Start webcam when device is selected
   useEffect(() => {
     async function setupWebcam() {
-      if (!selectedDevice) return
-
+      if (!selectedDevice) {
+        console.log('No device selected')
+        return
+      }
+      }
       try {
+        console.log('Attempting to access device:', selectedDevice)
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: {
-            deviceId: selectedDevice
+            deviceId: { exact: selectedDevice }
           },
           audio: false
         })
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream
+          console.log('Stream connected to video element')
         }
       } catch (err) {
         console.error('Error accessing webcam:', err)
       }
     }
-
+      console.error("Video or canvas element not found.");
     setupWebcam()
-
+    }
+    // Cleanup function
     return () => {
       if (videoRef.current?.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream
@@ -189,7 +199,10 @@ export default function Component() {
             {/* Add camera selector */}
             <select 
               value={selectedDevice}
-              onChange={(e) => setSelectedDevice(e.target.value)}
+              onChange={(e) => {
+                console.log('Changing device to:', e.target.value)
+                setSelectedDevice(e.target.value)
+              }}
               className="mb-4 p-2 border rounded"
             >
               {videoDevices.map((device) => (
@@ -233,7 +246,7 @@ export default function Component() {
                 onClick={() => setIsRecording(!isRecording)}
                 startIcon={<PhotoCamera />}
               >
-                {isRecording ? "Stop Recording" : "Take Snapshot"}
+                { "Take Snapshot"}
               </Button>
               <Button 
                 variant="outlined" 
@@ -263,7 +276,7 @@ export default function Component() {
               </Button>
             </div>
           </div>
-
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
           {/* Live Transcription */}
           <Card>
             <CardContent sx={{ p: 3 }}>
@@ -293,6 +306,24 @@ export default function Component() {
           </Card>
         </div>
       </main>
+      {latestSnapshot && (
+        <div 
+          className="fixed bottom-4 right-4 z-50 shadow-lg rounded-lg overflow-hidden bg-white"
+          style={{ maxWidth: '200px' }}
+        >
+          <img 
+            src={latestSnapshot} 
+            alt="Latest snapshot" 
+            className="w-full h-auto"
+          />
+          <button
+            onClick={() => setLatestSnapshot(null)}
+            className="absolute top-2 right-2 bg-gray-800 text-white rounded-full p-1 hover:bg-gray-700"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   )
 }
