@@ -30,8 +30,8 @@ export default function Navbar() {
             </Typography>
           </div>
           <nav className="flex gap-2">
-            <Link href="/courses" className="no-underline">
-              <Button color="inherit" sx={{ color: 'white' }}>My Dashboard</Button>
+            <Link href="/" className="no-underline">
+              <Button color="inherit" sx={{ color: 'white' }}>Home</Button>
             </Link>
             <Link href="/course" className="no-underline">
               <Button color="inherit" sx={{ color: 'white' }}>Course</Button>
