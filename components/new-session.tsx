@@ -67,7 +67,7 @@ export default function Component() {
         console.log('No device selected')
         return
       }
-      }
+
       try {
         console.log('Attempting to access device:', selectedDevice)
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -80,14 +80,16 @@ export default function Component() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           console.log('Stream connected to video element')
+        } else {
+          console.error("Video element not found.")
         }
       } catch (err) {
         console.error('Error accessing webcam:', err)
       }
     }
-      console.error("Video or canvas element not found.");
+
     setupWebcam()
-    }
+
     // Cleanup function
     return () => {
       if (videoRef.current?.srcObject) {
@@ -276,7 +278,6 @@ export default function Component() {
               </Button>
             </div>
           </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
           {/* Live Transcription */}
           <Card>
             <CardContent sx={{ p: 3 }}>
