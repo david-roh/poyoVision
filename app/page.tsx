@@ -6,6 +6,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook'
 
 import { useRouter } from "next/navigation";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { useUser } from "@clerk/nextjs";
 
 interface Course {
 	id: string;
@@ -17,6 +18,12 @@ export default function Home() {
 	const router = useRouter();
 	const [courses, setCourses] = useState<Course[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [file, setFile] = useState("");
+	const [cid, setCid] = useState("");
+	const [uploading, setUploading] = useState(false);
+	const { isLoaded, isSignedIn, user } = useUser();
+
+	const inputFile: any = useRef(null);
 
 	useEffect(() => {
 		const fetchCourses = async () => {
@@ -34,12 +41,6 @@ export default function Home() {
 
 		fetchCourses();
 	}, []);
-
-	const [file, setFile] = useState("");
-	const [cid, setCid] = useState("");
-	const [uploading, setUploading] = useState(false);
-
-	const inputFile: any = useRef(null);
 
 	const uploadFile = async (fileToUpload: any) => {
 		try {
@@ -61,37 +62,9 @@ export default function Home() {
 		}
 	};
 
-export default function Home() {
-	const { isLoaded, isSignedIn, user } = useUser();
-	const [courses, setCourses] = useState<Course[]>([]);
-
-	useEffect(() => {
-		if (isLoaded && isSignedIn && user?.id) {
-			// Initialize database
-			fetch('/api/init-db', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ userId: user.id }),
-			})
-			.then(() => {
-				// Fetch courses after DB is initialized
-				return fetch(`/api/courses?userId=${user.id}`);
-			})
-			.then(res => res.json())
-			.then(data => {
-				if (data.courses) {
-					setCourses(data.courses);
-				}
-			})
-			.catch(console.error);
-		}
-	}, [isLoaded, isSignedIn, user?.id]);
-
 	return (
 		<div>
-		{/* Main Content */}
+			{/* Main Content */}
 			<main className="container max-w-5xl mx-auto px-4 pt-8"> {/* Increased max-width */}
 			<div className="flex justify-between items-center mb-8">
 				<h1 className="text-4xl font-bold text-[#3E53A0] font-telegraf">My Courses</h1>
