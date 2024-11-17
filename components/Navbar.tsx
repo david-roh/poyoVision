@@ -1,8 +1,8 @@
 "use client";
 
-import { AppBar, Toolbar, Typography, IconButton, Button } from '@mui/material';
-import { Logout } from '@mui/icons-material';
-import Link from 'next/link'; 
+import { AppBar, Toolbar, Typography, Button } from '@mui/material';
+import Link from 'next/link';
+import { UserButton } from "@clerk/nextjs";
 
 export default function Navbar() {
   return (
@@ -36,17 +36,17 @@ export default function Navbar() {
             <Link href="/courses" passHref>
               <Button color="inherit">My Courses</Button>
             </Link>
-            <Link href="/course" passHref>
+            <Link href="/study-dashboard" passHref>
               <Button color="inherit">Study Dashboard</Button>
             </Link>
-            <Link href="/new-session" passHref>
+            <Link href="/video-dashboard" passHref>
               <Button color="inherit">Video Dashboard</Button>
             </Link>
           </nav>
         </div>
-        <IconButton color="inherit" sx={{ marginLeft: 'auto' }}>
-          <Logout />
-        </IconButton>
+        <div className="ml-auto">
+          <UserButton afterSignOutUrl="/" />
+        </div>
       </Toolbar>
     </AppBar>
   );
