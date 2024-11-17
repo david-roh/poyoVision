@@ -37,6 +37,7 @@ export default function Component() {
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<string | null>(null);
   const [sessionDefinitions, setSessionDefinitions] = useState<Array<{term: string, definition: string}>>([]);
+  const [sessionSnapshots, setSessionSnapshots] = useState<Array<{ url: string, timestamp: string }>>([]);
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
@@ -225,27 +226,21 @@ export default function Component() {
     const context = canvas.getContext("2d");
 
     if (context) {
-      // Set canvas dimensions to match video
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
-      
-      // Draw the current video frame
       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-      // Convert to blob
       canvas.toBlob(async (blob) => {
         if (blob) {
-          // Create URL for preview
           const imageUrl = URL.createObjectURL(blob);
           setLatestSnapshot(imageUrl);
 
-          // Create file for upload
+          setSessionSnapshots(prev => [...prev, {
+            url: imageUrl,
+            timestamp: new Date().toLocaleTimeString()
+          }]);
+
           const file = new File([blob], "snapshot.png", { type: "image/png" });
-          console.log('File being uploaded:', {
-            name: file.name,
-            type: file.type,
-            size: file.size
-          });
           
           try {
             const formData = new FormData();
@@ -367,7 +362,7 @@ export default function Component() {
                   backgroundColor: '#3E53A0',
                   flex: 1,
                   py: 2,
-                  fontSize: '1.125rem'
+                  fontSize: '1.125rem',
                 }}
                 onClick={takeSnapshotAndUpload}
                 startIcon={<PhotoCamera />}
@@ -510,18 +505,38 @@ export default function Component() {
         <DialogTitle>Session Summary</DialogTitle>
         <DialogContent>
           <div className="prose max-w-none">
-            <h2>Study Notes</h2>
+            <h1>Study Notes</h1>
             <ReactMarkdown>{sessionSummary || ''}</ReactMarkdown>
             
             {sessionDefinitions.length > 0 && (
               <>
-                <h2>Definitions</h2>
+                <h2 className="mt-8"><hr className="mb-6 border-t-2 border-gray-300" />Definitions</h2>
                 {sessionDefinitions.map((def, index) => (
-                  <div key={index} className="mb-4">
+                  <div key={index} className="mb-6">
                     <h3 className="font-bold">{def.term}</h3>
                     <ReactMarkdown>{def.definition}</ReactMarkdown>
                   </div>
                 ))}
+              </>
+            )}
+
+            {sessionSnapshots.length > 0 && (
+              <>
+                <h2 className="mt-8"><hr className="mb-6 border-t-2 border-gray-300" />Captured Images</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                  {sessionSnapshots.map((snapshot, index) => (
+                    <div key={index} className="relative aspect-video">
+                      <img 
+                        src={snapshot.url} 
+                        alt={`Snapshot ${index + 1}`}
+                        className="rounded-lg shadow-md w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        {snapshot.timestamp}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </>
             )}
           </div>
