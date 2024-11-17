@@ -50,14 +50,13 @@ export async function GET(
       .from(lectures)
       .where(eq(lectures.courseId, params.courseId));
 
-    // Return combined data
     return NextResponse.json({
       ...course[0],
       images,
       lectures: courseLectures
     });
   } catch (error) {
-    console.error("Failed to fetch course:", error);
+    console.error('Error fetching course:', error); // Add logging
     return NextResponse.json(
       { error: "Failed to fetch course" },
       { status: 500 }

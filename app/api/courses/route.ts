@@ -67,3 +67,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create course' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { id }: { id: string } = await request.json();
+    const index = dummyCourseDetails.findIndex(course => course.id.toString() === id);
+    
+    if (index === -1) {
+      return new NextResponse("Course not found", { status: 404 });
+    }
+    
+    dummyCourseDetails.splice(index, 1);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
