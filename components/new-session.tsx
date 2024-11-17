@@ -6,6 +6,10 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 import ReactMarkdown from 'react-markdown';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ShareIcon from '@mui/icons-material/Share';
+import { marked } from 'marked';
 
 interface NewSessionProps {
   courseId: string;
@@ -51,6 +55,12 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   const [status, setStatus] = useState<'idle' | 'recording' | 'processing' | 'completed' | 'error'>('idle');
+
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
@@ -512,6 +522,123 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
     setDefinition(null);
   };
 
+  // Add visualization setup when starting recording
+  const setupVisualization = (stream: MediaStream) => {
+    const audioCtx = new AudioContext();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 256;
+    source.connect(analyserNode);
+    setAudioContext(audioCtx);
+    setAnalyser(analyserNode);
+    drawWaveform();
+  };
+
+  // Add animation frame loop
+  const drawWaveform = () => {
+    if (!analyser || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const draw = () => {
+      requestAnimationFrame(draw);
+      analyser.getByteTimeDomainData(dataArray);
+      
+      ctx.fillStyle = '#ECEEF0';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#3E53A0';
+      ctx.beginPath();
+      
+      const sliceWidth = canvas.width / dataArray.length;
+      let x = 0;
+      
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    };
+    draw();
+  };
+
+  const generateShareLink = async () => {
+    try {
+      const response = await fetch(`/api/share/${recordingId}`);
+      const data = await response.json();
+      const url = `${window.location.origin}/shared/${data.shareId}`;
+      setShareUrl(url);
+      await navigator.clipboard.writeText(url);
+      // Add toast notification here
+    } catch (error) {
+      console.error('Failed to generate share link:', error);
+    }
+  };
+
+  const exportRecording = async (format: 'pdf' | 'markdown') => {
+    // Compile content with all session data
+    const content = `# ${new Date().toLocaleDateString()} - Study Session
+
+## Summary
+${sessionSummary || 'No summary available'}
+
+## Definitions
+${sessionDefinitions.map(def => `### ${def.term}\n${def.definition}`).join('\n\n')}
+
+## Transcript
+${transcription.join('\n')}
+`;
+
+    if (format === 'pdf') {
+      // Create temporary element for PDF generation
+      const printWindow = window.open('', '', 'height=400,width=800');
+      if (!printWindow) return;
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Study Session Export</title>
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                padding: 40px;
+                max-width: 800px;
+                margin: 0 auto;
+                line-height: 1.6;
+              }
+              h1, h2, h3 { color: #3E53A0; }
+            </style>
+          </head>
+          <body>
+            ${marked(content)}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    } else {
+      // Download as markdown
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `study-session-${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <div>
       {/* Main Content */}
@@ -597,6 +724,18 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
                 sx={{ flex: 1, py: 2, fontSize: '1.125rem' }}
               >
                 {sessionActive ? "End Session" : "Start Session"}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={generateShareLink}
+                startIcon={<ShareIcon />}
+                sx={{ 
+                  borderColor: 'rgba(62, 83, 160, 0.3)',
+                  color: 'primary',
+                  ml: 2
+                }}
+              >
+                Share
               </Button>
             </div>
           </div>
@@ -713,7 +852,10 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
             
             {sessionDefinitions.length > 0 && (
               <>
-                <h2 className="mt-8"><hr className="mb-6 border-t-2 border-gray-300" />Definitions</h2>
+                <h2 className="mt-8">
+                  <hr className="mb-6 border-t-2 border-gray-300" />
+                  Definitions
+                </h2>
                 {sessionDefinitions.map((def, index) => (
                   <div key={index} className="mb-6">
                     <h3 className="font-bold">{def.term}</h3>
@@ -744,10 +886,36 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
             )}
           </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSummaryModal(false)}>Close</Button>
+        <DialogActions sx={{ p: 2.5, gap: 1 }}>
+          <Button
+            onClick={() => exportRecording('markdown')}
+            variant="outlined"
+            startIcon={<DescriptionIcon />}
+            sx={{ 
+              borderColor: 'rgba(62, 83, 160, 0.3)',
+              color: '#3E53A0'
+            }}
+          >
+            Export as Markdown
+          </Button>
+          <Button
+            onClick={() => exportRecording('pdf')}
+            variant="contained"
+            startIcon={<PictureAsPdfIcon />}
+            sx={{ 
+              bgcolor: '#3E53A0',
+              '&:hover': { bgcolor: '#2E4390' }
+            }}
+          >
+            Export as PDF
+          </Button>
         </DialogActions>
       </Dialog>
+
+      <canvas 
+        ref={canvasRef}
+        className="w-full h-24 bg-[#ECEEF0] rounded-lg mb-4"
+      />
     </div>
   )
 }
