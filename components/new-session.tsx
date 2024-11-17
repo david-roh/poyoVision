@@ -111,10 +111,33 @@ export default function Component() {
     })
   }
 
-  const stopListening = () => {
+  const stopListening = async () => {
     SpeechRecognition.stopListening()
-    // Log the full transcript by joining all entries with newlines
-    console.log('Full Session Transcript:\n', transcription.join('\n'))
+    
+    // Join all transcription entries into a single string
+    const fullTranscript = transcription.join(' ')
+    console.log('Full Session Transcript:\n', fullTranscript)
+
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          transcript: fullTranscript
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('Transcript Summary:', data)
+    } catch (error) {
+      console.error('Error getting summary:', error)
+    }
   }
 
   useEffect(() => {
