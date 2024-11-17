@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
                 messages: [
                     {
                         role: "system",
-                        content: "Provide a concise definition and context for the following text. If it is a word, explain its meaning. If it is a phrase or sentence, summarize its purpose or meaning in a clear and brief manner suitable for quick understanding."
+                        content: "Provide a concise definition and context for the following text. If it is a word, explain its meaning. If it is a phrase or sentence, summarize its purpose or meaning in a clear and brief manner suitable for quick understanding. For mathematical expressions, use markdown math notation."
                     },
                     {
                         role: "user",
