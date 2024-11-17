@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from '@/lib/db/index';
+import { db, initializeDatabase } from '@/lib/db/index';
 import { courses, lectures, courseImages } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -8,6 +8,9 @@ export async function GET(
   { params }: { params: { courseId: string } }
 ) {
   try {
+    // Initialize database first
+    await initializeDatabase('system'); // Using 'system' as userId since this is a detail route
+
     // Fetch course details
     const course = await db
       .select({
@@ -56,7 +59,7 @@ export async function GET(
       lectures: courseLectures
     });
   } catch (error) {
-    console.error('Error fetching course:', error); // Add logging
+    console.error('Error fetching course:', error);
     return NextResponse.json(
       { error: "Failed to fetch course" },
       { status: 500 }

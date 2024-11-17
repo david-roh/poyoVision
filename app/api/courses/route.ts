@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db/index';
-import { courses, courseImages } from '@/lib/db/schema';
+import { db, initializeDatabase } from '@/lib/db/index';
+import { courses } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,20 +13,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    // Initialize database if needed
+    await initializeDatabase(userId);
+
     const userCourses = await db
-      .select({
-        id: courses.id,
-        name: courses.name,
-        description: courses.description,
-        imageUrl: courses.imageUrl,
-        status: courses.status,
-        createdAt: courses.createdAt,
-        updatedAt: courses.updatedAt
-      })
+      .select()
       .from(courses)
       .where(eq(courses.userId, userId));
 
-    // Return courses without trying to fetch images for now
     return NextResponse.json({ courses: userCourses });
   } catch (error) {
     console.error('Failed to fetch courses:', error);
@@ -42,24 +36,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and User ID are required' }, { status: 400 });
     }
 
-    const courseId = uuidv4();
-    
-    // Create course with only the fields that exist in the schema
+    // Initialize database if needed
+    await initializeDatabase(userId);
+
     const newCourse = await db.insert(courses).values({
-      id: courseId,
+      id: uuidv4(),
       name,
       description,
       userId,
       status: 'active',
       imageUrl: null,
     }).returning();
-
-    // Add default image
-    await db.insert(courseImages).values({
-      id: uuidv4(),
-      courseId,
-      url: "https://placeholder.co/400x300"
-    });
 
     return NextResponse.json(newCourse[0]);
   } catch (error) {
