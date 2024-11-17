@@ -33,3 +33,5 @@ yarn-error.log*
 
 !/styles/*
 .env
+
+sqlite.db

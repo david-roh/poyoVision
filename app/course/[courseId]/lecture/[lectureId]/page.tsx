@@ -91,8 +91,8 @@ export default function LectureIdPage() {
                 </Typography>
               }
             />
-            <CardContent className="p-6">
-              <div className="h-[calc(100vh-12rem)] overflow-auto custom-scrollbar">
+            <CardContent className="p-4">
+              <div className="h-[calc(100vh-24rem)] overflow-auto custom-scrollbar">
                 <div className="prose max-w-none">
                   {lectureData.notes ? (
                     <div dangerouslySetInnerHTML={{ __html: lectureData.notes }} />
@@ -182,7 +182,7 @@ export default function LectureIdPage() {
                   </Typography>
                 }
               />
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <audio controls className="w-full rounded-full">
                     <source src={lectureData.audioUrl} type="audio/mpeg" />
