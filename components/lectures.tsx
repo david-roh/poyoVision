@@ -110,35 +110,52 @@ export default function Component() {
           </div>
 
           {/* Right Column - Chat Bot */}
-          <Card className="bg-white shadow-lg" sx={{ borderRadius: '12px' }}>
+          <Card className="bg-white shadow-lg" sx={{ 
+            borderRadius: '12px', 
+            height: 'calc(100vh - 12rem)',
+            maxHeight: '800px'
+          }}>
             <CardHeader 
               title={
-                <div className="text-[#3E53A0] flex items-center gap-2 font-bold text-xl">
+                <div className="text-[#3E53A0] flex items-center gap-3 font-bold text-lg">
                   <PsychologyAltIcon className="h-6 w-6" />
                   Lecture Assistant
                 </div>
               }
               className="border-b"
               sx={{ 
+                p: '16px 20px',  // Adjusted padding
                 borderTopLeftRadius: '12px',
                 borderTopRightRadius: '12px',
+                bgcolor: 'rgba(62, 83, 160, 0.02)',
+                borderBottom: '1px solid rgba(62, 83, 160, 0.1)',
               }}
             />
-            <CardContent>
-              <div className="flex flex-col gap-4 h-[calc(100vh-20rem)] p-4">
-                <div className="flex-1 overflow-auto space-y-4">
+            <CardContent sx={{ 
+              height: 'calc(100% - 64px)', 
+              p: '0 !important',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div className="flex-1 overflow-y-auto px-5 py-4">
+                <div className="space-y-4">
                   {chatHistory.map((msg, i) => (
                     <div
                       key={i}
                       className={`flex ${
                         msg.role === "assistant" ? "justify-start" : "justify-end"
-                      }`}
+                      } items-end gap-3`}
                     >
+                      {msg.role === "assistant" && (
+                        <div className="flex-shrink-0">
+                          <MenuBookIcon className="h-5 w-5 text-[#3E53A0]" />
+                        </div>
+                      )}
                       <div
-                        className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                        className={`rounded-2xl px-4 py-2.5 max-w-[85%] text-sm leading-relaxed ${
                           msg.role === "assistant"
-                            ? "bg-[#ECEEF0] text-gray-800"
-                            : "bg-[#3E53A0] text-white"
+                            ? "bg-[#F5F7F9] text-gray-800 rounded-bl-none"
+                            : "bg-[#3E53A0] text-white rounded-br-none"
                         }`}
                       >
                         {msg.content}
@@ -146,15 +163,51 @@ export default function Component() {
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-2 pt-4 border-t">
+              </div>
+              <div className="border-t border-gray-100 bg-white px-5 py-4">
+                <div className="flex items-center gap-3">
                   <Input
+                    fullWidth
                     placeholder="Ask about the lecture..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="flex-1"
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        padding: '10px 16px',
+                        borderRadius: '20px',
+                        backgroundColor: '#F5F7F9',
+                        fontSize: '0.875rem',
+                        lineHeight: '1.5',
+                        '&::placeholder': {
+                          color: 'rgba(0, 0, 0, 0.45)',
+                          opacity: 1
+                        }
+                      },
+                      '&:before': {
+                        display: 'none'
+                      },
+                      '&:after': {
+                        display: 'none'
+                      }
+                    }}
                   />
-                  <Button className="bg-[#3E53A0] hover:bg-[#3E53A0]/90">
-                    <SendIcon className="h-4 w-4" />
+                  <Button 
+                    variant="contained"
+                    sx={{
+                      minWidth: '40px',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '20px',
+                      padding: 0,
+                      backgroundColor: '#3E53A0',
+                      boxShadow: 'none',
+                      '&:hover': {
+                        backgroundColor: '#2E4390',
+                        boxShadow: 'none'
+                      }
+                    }}
+                  >
+                    <SendIcon sx={{ fontSize: 18 }} />
                   </Button>
                 </div>
               </div>
