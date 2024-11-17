@@ -26,7 +26,7 @@
   }
 
   html body {
-    @apply m-0 h-screen w-full bg-light text-black font-telegraf;
+    @apply m-0 h-screen w-full bg-light text-black font-telegraf pt-32;
   }
 
   h1, h2, h3, h4 {

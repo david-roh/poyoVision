@@ -58,7 +58,7 @@ export default function Home() {
 	return (
 		<div>
 		{/* Main Content */}
-			<main className="container max-w-5xl mx-auto px-4 py-8"> {/* Increased max-width */}
+			<main className="container max-w-5xl mx-auto px-4 pt-8"> {/* Increased max-width */}
 			<h1 className="text-4xl font-bold text-[#3E53A0] mb-8 font-telegraf">My Courses</h1> {/* Increased heading size and margin */}
 			<div className="grid gap-6 md:grid-cols-2"> {/* Increased gap and reduced columns */}
 			{courses.map((course, index) => (
