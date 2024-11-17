@@ -11,9 +11,9 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <img 
-              src="/poyo-logo.svg" 
+              src="/poyo-logo.png" 
               alt="Logo" 
-              className="h-8 w-8"
+              className="h-[50px] w-[50px]"
             />
             <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'white' }}>
               PoyoVision
