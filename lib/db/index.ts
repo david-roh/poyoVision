@@ -2,30 +2,31 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { courses, lectures, sessions, snapshots, notes } from "./schema";
 import { v4 as uuidv4 } from 'uuid';
-import { currentUser } from '@clerk/nextjs';
 import { eq } from 'drizzle-orm';
 
 const sqlite = new Database('sqlite.db');
 export const db = drizzle(sqlite);
 
-const getSeedCourses = (userId: string) => [
+const FAKE_USER_ID = 'fake-user-123';
+
+const getSeedCourses = () => [
   {
     id: uuidv4(),
     name: "Introduction to Computer Science",
     description: "Fundamental concepts of programming and computer science",
-    userId,
+    userId: FAKE_USER_ID,
   },
   {
     id: uuidv4(),
     name: "Data Structures and Algorithms",
     description: "Essential data structures and algorithm design techniques",
-    userId,
+    userId: FAKE_USER_ID,
   },
   {
     id: uuidv4(),
     name: "Web Development Fundamentals",
     description: "Basics of HTML, CSS, and JavaScript",
-    userId,
+    userId: FAKE_USER_ID,
   },
 ];
 
@@ -90,29 +91,21 @@ export async function initializeDatabase() {
       );
     `);
 
-    // Get current user using currentUser() instead of auth()
-    const user = await currentUser();
-    
-    if (!user?.id) {
-      console.log("⚠️ No authenticated user, skipping seed data");
-      return;
-    }
-
-    // Seed initial data if needed
+    // Remove clerk authentication and use fake user ID
     const existingCourses = await db
       .select()
       .from(courses)
-      .where(eq(courses.userId, user.id));
+      .where(eq(courses.userId, FAKE_USER_ID));
     
     if (existingCourses.length === 0) {
       console.log("🌱 Seeding initial course data...");
-      const seedCourses = getSeedCourses(user.id);
+      const seedCourses = getSeedCourses();
       for (const course of seedCourses) {
         await db.insert(courses).values(course);
       }
       console.log("✅ Seed data inserted successfully");
     } else {
-      console.log("📚 Database already contains courses for user, skipping seed");
+      console.log("📚 Database already contains courses, skipping seed");
     }
 
     console.log("✅ Database initialization complete");
