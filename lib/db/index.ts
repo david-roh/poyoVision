@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import { courses, lectures, sessions, snapshots, notes } from "./schema";
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
+import { backupDatabase, restoreDatabase } from './backup';
 
 const sqlite = new Database('sqlite.db');
 export const db = drizzle(sqlite);

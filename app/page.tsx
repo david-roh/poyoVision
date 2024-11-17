@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, Card, CardContent } from "@mui/material"
 import MenuBookIcon from '@mui/icons-material/MenuBook'
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { useUser } from "@clerk/nextjs";
 
 interface Course {
 	id: string;
@@ -14,7 +13,6 @@ interface Course {
 	description: string;
 	imageUrl?: string;
 }
-
 export default function Home() {
 	const router = useRouter();
 	const { isLoaded, isSignedIn, user } = useUser();
@@ -23,9 +21,8 @@ export default function Home() {
 	const [file, setFile] = useState("");
 	const [cid, setCid] = useState("");
 	const [uploading, setUploading] = useState(false);
-	const { isLoaded, isSignedIn, user } = useUser();
 
-	const inputFile: any = useRef(null);
+	const inputFile = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		const initializeAndFetchCourses = async () => {
