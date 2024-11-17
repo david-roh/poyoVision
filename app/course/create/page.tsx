@@ -35,7 +35,8 @@ export default function CreateCourse() {
         throw new Error('Failed to create course');
       }
 
-      router.push(`/`);
+      const course = await response.json();
+      router.push(`/course/${course.id}`);
     } catch (error) {
       console.error('Error creating course:', error);
     } finally {
