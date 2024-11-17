@@ -1,18 +1,27 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button, Card, CardContent } from "@mui/material"
 import MenuBookIcon from '@mui/icons-material/MenuBook'
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useCourses } from '@/hooks/useCourses';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from "@mui/material";
 
+interface Course {
+	id: string;
+	name: string;
+	description: string;
+	imageUrl?: string;
+}
+
 export default function Home() {
 	const router = useRouter();
-	const { courses, loading } = useCourses();
-
+	const { isLoaded, isSignedIn, user } = useUser();
+	const [courses, setCourses] = useState<Course[]>([]);
+	const [loading, setLoading] = useState(true);
 	const [file, setFile] = useState("");
 	const [cid, setCid] = useState("");
 	const [uploading, setUploading] = useState(false);
@@ -23,41 +32,36 @@ export default function Home() {
 
 	const inputFile: any = useRef(null);
 
-	const uploadFile = async (fileToUpload: any) => {
-		try {
-			setUploading(true);
-			const formData = new FormData();
-			formData.append("file", fileToUpload, `${fileToUpload.name}`);
-			const request = await fetch("/api/files", {
-				method: "POST",
-				body: formData,
-			});
-			const response = await request.json();
-			console.log(response);
-			setCid(response.IpfsHash);
-			setUploading(false);
-		} catch (e) {
-			console.log(e);
-			setUploading(false);
-			alert("Trouble uploading file");
-		}
-	};
+	useEffect(() => {
+		const initializeAndFetchCourses = async () => {
+			if (isLoaded && isSignedIn && user?.id) {
+				setLoading(true);
+				try {
+					// Initialize database first
+					await fetch('/api/init-db', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ userId: user.id }),
+					});
 
-	const handleChange = (e: any) => {
-		setFile(e.target.files[0]);
-		uploadFile(e.target.files[0]);
-	};
+					// Then fetch courses
+					const response = await fetch(`/api/courses?userId=${user.id}`);
+					const data = await response.json();
+					if (data.courses) {
+						setCourses(data.courses);
+					}
+				} catch (error) {
+					console.error('Error initializing or fetching courses:', error);
+				} finally {
+					setLoading(false);
+				}
+			}
+		};
 
-	const loadRecent = async () => {
-		try {
-			const res = await fetch("/api/files");
-			const json = await res.json();
-			setCid(json.ipfs_pin_hash);
-		} catch (e) {
-			console.log(e);
-			alert("trouble loading files");
-		}
-	};
+		initializeAndFetchCourses();
+	}, [isLoaded, isSignedIn, user?.id]);
 
 	const handleDelete = async () => {
 		if (!deleteDialog.courseId) return;
@@ -250,7 +254,7 @@ export default function Home() {
 				))}
 				</div>
 			)}
-		</main>
-	  </div>
+			</main>
+		</div>
 	);
 }

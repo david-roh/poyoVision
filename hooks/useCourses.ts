@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useUser } from "@clerk/nextjs";
 
 interface Course {
   id: string;
   name: string;
   description: string;
+  imageUrl?: string;
   lectures?: Lecture[];
 }
 
@@ -15,23 +17,37 @@ interface Lecture {
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isLoaded, isSignedIn, user } = useUser();
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await fetch("/api/courses");
-        if (!response.ok) throw new Error("Failed to fetch courses");
-        const data = await response.json();
-        setCourses(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+    const initializeAndFetchCourses = async () => {
+      if (isLoaded && isSignedIn && user?.id) {
+        try {
+          // Initialize database first
+          await fetch('/api/init-db', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId: user.id }),
+          });
+
+          // Then fetch courses
+          const response = await fetch(`/api/courses?userId=${user.id}`);
+          const data = await response.json();
+          if (data.courses) {
+            setCourses(data.courses);
+          }
+        } catch (error) {
+          console.error('Error initializing or fetching courses:', error);
+        } finally {
+          setLoading(false);
+        }
       }
     };
 
-    fetchCourses();
-  }, []);
+    initializeAndFetchCourses();
+  }, [isLoaded, isSignedIn, user?.id]);
 
   return { courses, loading };
 }

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Button, TextField, Paper, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useUser } from "@clerk/nextjs";
 
 export default function CreateCourse() {
   const router = useRouter();
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -23,16 +25,20 @@ export default function CreateCourse() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          userId: user?.id
+        }),
       });
 
-      if (!response.ok) throw new Error("Failed to create course");
+      if (!response.ok) {
+        throw new Error('Failed to create course');
+      }
 
       const course = await response.json();
-      router.push(`/`);
+      router.push(`/course/${course.id}`);
     } catch (error) {
-      console.error(error);
-      alert("Failed to create course");
+      console.error('Error creating course:', error);
     } finally {
       setIsSubmitting(false);
     }

@@ -7,30 +7,28 @@ import { eq } from 'drizzle-orm';
 const sqlite = new Database('sqlite.db');
 export const db = drizzle(sqlite);
 
-const FAKE_USER_ID = 'fake-user-123';
-
-const getSeedCourses = () => [
+const getSeedCourses = (userId: string) => [
   {
     id: uuidv4(),
     name: "Introduction to Computer Science",
     description: "Fundamental concepts of programming and computer science",
-    userId: FAKE_USER_ID,
+    userId: userId,
   },
   {
     id: uuidv4(),
     name: "Data Structures and Algorithms",
     description: "Essential data structures and algorithm design techniques",
-    userId: FAKE_USER_ID,
+    userId: userId,
   },
   {
     id: uuidv4(),
     name: "Web Development Fundamentals",
     description: "Basics of HTML, CSS, and JavaScript",
-    userId: FAKE_USER_ID,
+    userId: userId,
   },
 ];
 
-export async function initializeDatabase() {
+export async function initializeDatabase(userId: string) {
   try {
     console.log("🔄 Initializing database...");
 
@@ -89,17 +87,24 @@ export async function initializeDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS course_images (
+        id TEXT PRIMARY KEY,
+        course_id TEXT REFERENCES courses(id),
+        url TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
-    // Remove clerk authentication and use fake user ID
+    // Check for existing courses
     const existingCourses = await db
       .select()
       .from(courses)
-      .where(eq(courses.userId, FAKE_USER_ID));
+      .where(eq(courses.userId, userId));
     
     if (existingCourses.length === 0) {
       console.log("🌱 Seeding initial course data...");
-      const seedCourses = getSeedCourses();
+      const seedCourses = getSeedCourses(userId);
       for (const course of seedCourses) {
         await db.insert(courses).values(course);
       }
