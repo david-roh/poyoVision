@@ -114,30 +114,50 @@ export default function Component() {
   const stopListening = async () => {
     SpeechRecognition.stopListening()
     
-    // Join all transcription entries into a single string
-    const fullTranscript = transcription.join(' ')
-    console.log('Full Session Transcript:\n', fullTranscript)
-
-    try {
-      const response = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          transcript: fullTranscript
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log('Transcript Summary:', data)
-    } catch (error) {
-      console.error('Error getting summary:', error)
+    // Wait briefly to ensure final transcription is processed
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Add any final transcript that hasn't been added to transcription array yet
+    if (finalTranscript) {
+      setTranscription(prev => [...prev, finalTranscript])
     }
+    
+    // Add any remaining interim transcript
+    if (interimTranscript) {
+      setTranscription(prev => [...prev, interimTranscript])
+    }
+
+    // Use a Promise to wait for state update
+    await new Promise(resolve => {
+      setTimeout(() => {
+        const fullTranscript = transcription.join(' ')
+        console.log('Full Session Transcript:\n', fullTranscript)
+        
+        // Move the API call inside here to ensure it happens after state is updated
+        fetch('/api/summarize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            transcript: fullTranscript
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          return response.json()
+        })
+        .then(data => {
+          console.log('Transcript Summary:', data.choices[0].message.content)
+        })
+        .catch(error => {
+          console.error('Error getting summary:', error)
+        })
+        .finally(() => resolve(void 0))
+      }, 500) 
+    })
   }
 
   useEffect(() => {
