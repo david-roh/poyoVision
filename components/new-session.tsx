@@ -10,8 +10,6 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ShareIcon from '@mui/icons-material/Share';
 import { marked } from 'marked';
-import rehypeKatex from 'rehype-katex';
-import remarkMath from 'remark-math';
 
 interface NewSessionProps {
   courseId: string;
@@ -25,6 +23,7 @@ export default function Component({ courseId, lectureId, recordingId }: NewSessi
   const [sessionActive, setSessionActive] = useState(false)
   const [transcription, setTranscription] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
   
   const [selectedDevice, setSelectedDevice] = useState<string>('')
