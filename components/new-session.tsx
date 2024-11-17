@@ -2,7 +2,7 @@
 
 import { Button, Card, CardContent, Typography } from '@mui/material';
 import { PhotoCamera, Flag, Mic, Videocam } from '@mui/icons-material';
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 export default function Component() {
   const [isRecording, setIsRecording] = useState(false)
@@ -11,6 +11,61 @@ export default function Component() {
     "Consectetur adipiscing elit...",
     "Sed do eiusmod tempor...",
   ])
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
+  const [selectedDevice, setSelectedDevice] = useState<string>('')
+
+  // Function to get list of video devices
+  const getVideoDevices = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    const videoDevices = devices.filter(device => device.kind === 'videoinput')
+    setVideoDevices(videoDevices)
+    // Set first device as default if none selected
+    if (videoDevices.length && !selectedDevice) {
+      setSelectedDevice(videoDevices[0].deviceId)
+    }
+  }
+
+  // Get devices when component mounts
+  useEffect(() => {
+    getVideoDevices()
+    // Listen for device changes (e.g., plugging in/removing cameras)
+    navigator.mediaDevices.addEventListener('devicechange', getVideoDevices)
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', getVideoDevices)
+    }
+  }, [])
+
+  // Start webcam when device is selected
+  useEffect(() => {
+    async function setupWebcam() {
+      if (!selectedDevice) return
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: {
+            deviceId: selectedDevice
+          },
+          audio: false
+        })
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      } catch (err) {
+        console.error('Error accessing webcam:', err)
+      }
+    }
+
+    setupWebcam()
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [selectedDevice])
 
   return (
     <div>
@@ -19,21 +74,34 @@ export default function Component() {
         <div className="grid gap-8 md:grid-cols-[2fr_1fr] p-4">
           {/* Video Feed */}
           <div className="flex flex-col gap-6">
+            {/* Add camera selector */}
+            <select 
+              value={selectedDevice}
+              onChange={(e) => setSelectedDevice(e.target.value)}
+              className="mb-4 p-2 border rounded"
+            >
+              {videoDevices.map((device) => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
+                </option>
+              ))}
+            </select>
+
             <Card sx={{ 
               border: '2px dashed rgba(62, 83, 160, 0.3)',
               backgroundColor: 'white' 
             }}>
               <CardContent sx={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-                padding: 4,
+                padding: '0 !important', // Remove padding for video
                 aspectRatio: '16/9'
               }}>
-                <Videocam sx={{ fontSize: 64, color: '#3E53A0' }} />
-                <Typography sx={{ color: '#3E53A0' }}>Live Video Feed</Typography>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
               </CardContent>
             </Card>
             
