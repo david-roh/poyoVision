@@ -62,40 +62,56 @@ export default function Component() {
 
   // Start webcam when device is selected
   useEffect(() => {
-    async function setupWebcam() {
-      if (!selectedDevice) {
-        console.log('No device selected')
-        return
-      }
-      }
+    const setupWebcam = async () => {
       try {
-        console.log('Attempting to access device:', selectedDevice)
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: {
-            deviceId: { exact: selectedDevice }
-          },
-          audio: false
-        })
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
         
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          console.log('Stream connected to video element')
+        if (videoDevices.length === 0) {
+          console.error('No video devices found');
+          return;
+        }
+
+        // Set the first device as default if none selected
+        if (!selectedDevice) {
+          setSelectedDevice(videoDevices[0].deviceId);
+        }
+
+        if (!videoRef.current) {
+          console.error("Video element not found.");
+          return;
+        }
+
+        try {
+          console.log('Attempting to access device:', selectedDevice);
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              deviceId: { exact: selectedDevice }
+            },
+            audio: false
+          });
+
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+
+        } catch (err) {
+          console.error('Error accessing webcam:', err);
         }
       } catch (err) {
-        console.error('Error accessing webcam:', err)
+        console.error('Error setting up webcam:', err);
       }
-    }
-      console.error("Video or canvas element not found.");
-    setupWebcam()
-    }
+    };
+
+    setupWebcam();
+
     // Cleanup function
     return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream
-        stream.getTracks().forEach(track => track.stop())
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
       }
-    }
-  }, [selectedDevice])
+    };
+  }, [selectedDevice]);
 
   // Add this function to handle session end
   const handleSessionButton = () => {
@@ -189,6 +205,63 @@ export default function Component() {
     setIsMounted(true)
   }, [])
 
+  const takeSnapshotAndUpload = async () => {
+    if (!videoRef.current) {
+      console.error("Video element not found.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (context) {
+      // Set canvas dimensions to match video
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      
+      // Draw the current video frame
+      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+      // Convert to blob
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          // Create URL for preview
+          const imageUrl = URL.createObjectURL(blob);
+          setLatestSnapshot(imageUrl);
+
+          // Create file for upload
+          const file = new File([blob], "snapshot.png", { type: "image/png" });
+          console.log('File being uploaded:', {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          });
+          
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch('/api/files', {
+              method: 'POST',
+              body: formData
+            });
+
+            if (!response.ok) {
+              throw new Error(`Upload failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Upload successful:', result);
+            
+          } catch (error) {
+            console.error("Upload error:", error);
+            alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+      }, "image/png");
+    }
+  };
+
   return (
     <div>
       {/* Main Content */}
@@ -196,7 +269,7 @@ export default function Component() {
         <div className="grid gap-8 md:grid-cols-[2fr_1fr] p-4">
           {/* Video Feed */}
           <div className="flex flex-col gap-6">
-            {/* Add camera selector */}
+            {/* Camera selector and video content */}
             <select 
               value={selectedDevice}
               onChange={(e) => {
@@ -217,10 +290,10 @@ export default function Component() {
               backgroundColor: 'white' 
             }}>
               <CardContent sx={{ 
-                padding: '0 !important', // Remove padding for video
+                padding: '0 !important',
                 aspectRatio: '16/9'
               }}>
-                {isMounted && (  // Only render video on client-side
+                {isMounted && (
                   <video
                     ref={videoRef}
                     autoPlay
@@ -232,6 +305,7 @@ export default function Component() {
               </CardContent>
             </Card>
             
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button
                 variant={isRecording ? "contained" : "contained"}
@@ -243,10 +317,10 @@ export default function Component() {
                   py: 2,
                   fontSize: '1.125rem'
                 }}
-                onClick={() => setIsRecording(!isRecording)}
+                onClick={takeSnapshotAndUpload}
                 startIcon={<PhotoCamera />}
               >
-                { "Take Snapshot"}
+                Take Snapshot
               </Button>
               <Button 
                 variant="outlined" 
@@ -276,7 +350,7 @@ export default function Component() {
               </Button>
             </div>
           </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+
           {/* Live Transcription */}
           <Card>
             <CardContent sx={{ p: 3 }}>
@@ -306,6 +380,8 @@ export default function Component() {
           </Card>
         </div>
       </main>
+
+      {/* Snapshot Preview */}
       {latestSnapshot && (
         <div 
           className="fixed bottom-4 right-4 z-50 shadow-lg rounded-lg overflow-hidden bg-white"
@@ -318,9 +394,9 @@ export default function Component() {
           />
           <button
             onClick={() => setLatestSnapshot(null)}
-            className="absolute top-2 right-2 bg-gray-800 text-white rounded-full p-1 hover:bg-gray-700"
+            className="absolute top-2 right-2 bg-gray-800 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-gray-700"
           >
-            ✕
+            ×
           </button>
         </div>
       )}
