@@ -102,6 +102,12 @@ export default function Home() {
 									>
 										{uploading ? "Uploading..." : "Upload"}
 									</button>
+									<a
+										href="/dashboard"
+										className="ml-10 inline-block w-[150px] text-center bg-secondary text-light rounded-3xl py-2 px-4 hover:bg-accent hover:text-light transition-all duration-300 ease-in-out"
+									>
+										View Dashboards
+									</a>
 								</div>
 								{cid && <Files cid={cid} />}
 							</div>
