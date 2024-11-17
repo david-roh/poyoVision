@@ -87,6 +87,13 @@ export async function initializeDatabase(userId: string) {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS course_images (
+        id TEXT PRIMARY KEY,
+        course_id TEXT REFERENCES courses(id),
+        url TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Check for existing courses

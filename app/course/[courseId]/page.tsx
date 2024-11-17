@@ -7,12 +7,20 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import { useState, useEffect } from "react";
 
 interface CourseData {
+  id: string;
   name: string;
   description: string;
+  imageUrl: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  images: { url: string }[];
   lectures?: {
-    id: number;
+    id: string;
     title: string;
+    description: string;
     date: string;
+    createdAt: string;
   }[];
 }
 
@@ -41,6 +49,32 @@ export default function CoursePage() {
     }
   }, [params.courseId]);
 
+  const addLecture = async (title: string, description: string) => {
+    try {
+      const response = await fetch(`/api/courses/${params.courseId}/lectures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          date: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create lecture');
+      
+      // Refresh course data to show new lecture
+      const updatedCourse = await fetch(`/api/courses/${params.courseId}`);
+      const data = await updatedCourse.json();
+      setCourseData(data);
+    } catch (error) {
+      console.error('Failed to add lecture:', error);
+      alert('Failed to add lecture');
+    }
+  };
+
   if (loading) return <div>Loading course data...</div>;
   if (!courseData) return <div>Course not found</div>;
 
@@ -56,6 +90,33 @@ export default function CoursePage() {
             <Typography variant="body1" sx={{ color: '#666', mb: 4 }}>
               {courseData.description}
             </Typography>
+            <div className="flex justify-between items-center mb-6">
+              <Typography variant="h6" sx={{ color: '#3E53A0' }}>
+                Lectures
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  const title = prompt('Enter lecture title:');
+                  const description = prompt('Enter lecture description:');
+                  if (title && description) {
+                    addLecture(title, description);
+                  }
+                }}
+                sx={{
+                  bgcolor: '#3E53A0',
+                  '&:hover': {
+                    bgcolor: '#5C71BE',
+                  },
+                  textTransform: 'none',
+                  borderRadius: '8px',
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                Add Lecture
+              </Button>
+            </div>
             
             {courseData.lectures?.map((lecture) => (
               <Card 
