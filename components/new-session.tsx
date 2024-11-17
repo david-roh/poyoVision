@@ -113,6 +113,8 @@ export default function Component() {
 
   const stopListening = () => {
     SpeechRecognition.stopListening()
+    // Log the full transcript by joining all entries with newlines
+    console.log('Full Session Transcript:\n', transcription.join('\n'))
   }
 
   useEffect(() => {
