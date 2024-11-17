@@ -16,7 +16,7 @@ export default function Navbar() {
               className="h-[50px] w-[50px]"
             />
             <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'white' }}>
-              PoyoVision
+              poyo.ed
             </Typography>
           </div>
           <nav className="flex gap-2">
