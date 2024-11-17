@@ -5,6 +5,7 @@ import PsychologyAltIcon from '@mui/icons-material/PsychologyAlt';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SendIcon from '@mui/icons-material/Send';
 import { useState } from "react"
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 export default function Component() {
   const [message, setMessage] = useState("")
@@ -26,25 +27,84 @@ export default function Component() {
         <div className="grid gap-6 md:grid-cols-[1.5fr_1fr]">
           {/* Left Column - Lecture List */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-[#3E53A0] mb-6">My Lectures</h2>
+            <h2 className="text-3xl font-bold text-[#3E53A0] mb-6">
+              My Lectures
+            </h2>
             {lectures.map((lecture) => (
-              <Card key={lecture.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                <CardHeader 
-                  title={
-                    <div className="flex items-center gap-3">
-                      <PlayCircleOutlineIcon className="h-5 w-5 text-[#3E53A0]" />
-                      <div>
-                        <div className="text-[#3E53A0]">Lecture {lecture.id}</div>
-                        <p className="text-sm text-gray-600">{lecture.title}</p>
-                      </div>
+              <Card 
+                key={lecture.id} 
+                sx={{ 
+                  bgcolor: 'white',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  height: 'auto',
+                  p: 0,
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    boxShadow: '0 6px 12px -2px rgba(62, 83, 160, 0.15)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <Button
+                  fullWidth
+                  sx={{
+                    justifyContent: 'flex-start',
+                    py: 3,
+                    px: 4,
+                    minHeight: '84px',
+                    textAlign: 'left',
+                    background: 'linear-gradient(135deg, rgba(62, 83, 160, 0.02) 0%, rgba(62, 83, 160, 0.06) 100%)',
+                    '&:hover': { 
+                      background: 'linear-gradient(135deg, rgba(62, 83, 160, 0.06) 0%, rgba(62, 83, 160, 0.1) 100%)',
+                    },
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 3,
+                    textTransform: 'none',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      bottom: 0,
+                      height: '3px',
+                      width: '100%',
+                      background: 'linear-gradient(90deg, #3E53A0 0%, #5C71BE 100%)',
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease-in-out',
+                    },
+                    '&:hover::after': {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  <div className="bg-[#3E53A0]/5 rounded-full p-2">
+                    <PlayCircleOutlineIcon 
+                      sx={{ 
+                        fontSize: 24,
+                        color: '#3E53A0',
+                        transition: 'transform 0.2s ease-in-out',
+                        '.MuiButton-root:hover &': {
+                          transform: 'scale(1.1)'
+                        }
+                      }} 
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-lg font-semibold text-[#3E53A0] leading-tight">
+                      Lecture {lecture.id}
                     </div>
-                  }
-                  action={
-                    <span className="text-sm text-gray-600">
-                      {new Date(lecture.date).toLocaleDateString()}
-                    </span>
-                  }
-                />
+                    <p className="text-base text-gray-500 truncate leading-tight mt-1.5">
+                      {lecture.title}
+                    </p>
+                  </div>
+                  <span className="text-base text-gray-500 font-medium pl-4">
+                    {new Date(lecture.date).toLocaleDateString()}
+                  </span>
+                </Button>
               </Card>
             ))}
           </div>
@@ -53,8 +113,8 @@ export default function Component() {
           <Card className="bg-white shadow-lg">
             <CardHeader 
               title={
-                <div className="text-[#3E53A0] flex items-center gap-2">
-                  <PsychologyAltIcon className="h-5 w-5" />
+                <div className="text-[#3E53A0] flex items-center gap-2 font-bold text-xl">
+                  <PsychologyAltIcon className="h-6 w-6" />
                   Lecture Assistant
                 </div>
               }
