@@ -6,7 +6,13 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
-export default function Component() {
+interface NewSessionProps {
+  courseId: string;
+  lectureId: string;
+  recordingId: string;
+}
+
+export default function Component({ courseId, lectureId, recordingId }: NewSessionProps) {
   const router = useRouter()
   const [isRecording, setIsRecording] = useState(false)
   const [sessionActive, setSessionActive] = useState(false)
@@ -28,6 +34,13 @@ export default function Component() {
   } = useSpeechRecognition()
 
   const [latestSnapshot, setLatestSnapshot] = useState<string | null>(null)
+
+  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
+  const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
+  const [status, setStatus] = useState<'idle' | 'recording' | 'processing' | 'completed' | 'error'>('idle');
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
@@ -114,19 +127,86 @@ export default function Component() {
   }, [selectedDevice]);
 
   // Add this function to handle session end
-  const handleSessionButton = () => {
+  const handleSessionButton = async () => {
     if (sessionActive) {
-      // If session is active, end it and navigate home
-      setSessionActive(false)
-      // setTimeout(() => {
-      //   router.push('/')
-      // }, 500)
+      // Stop recording
+      setSessionActive(false);
+      if (audioRecorder) {
+        await stopListening(); // Wait for transcription to finish
+        audioRecorder.stop();
+        // audioRecorder.onstop will handle the audio upload
+        await handleSessionEnd(); // Wait for transcript and summary uploads
+      }
     } else {
-      // If no session, start one
-      setSessionActive(true)
-      startListening()
+      // Start new recording session
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setAudioStream(stream);
+        
+        const recorder = new MediaRecorder(stream);
+        setAudioRecorder(recorder);
+        
+        recorder.ondataavailable = (event) => {
+          audioChunks.current.push(event.data);
+        };
+        
+        recorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+          setAudioBlob(audioBlob);
+          
+          try {
+            // Upload audio file
+            const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('file', audioFile);
+
+            // Upload to Pinata
+            const uploadResponse = await fetch('/api/files', {
+              method: 'POST',
+              body: formData
+            });
+
+            if (!uploadResponse.ok) throw new Error('Failed to upload audio to Pinata');
+            const uploadData = await uploadResponse.json();
+
+            // Save to recordings table
+            const response = await fetch(`/api/courses/${courseId}/lectures/${lectureId}/media`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                type: 'audio',
+                recordingId: recordingId,
+                cid: uploadData.IpfsHash
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to save audio metadata');
+            }
+
+            // Clean up
+            audioStream?.getTracks().forEach(track => track.stop());
+            setAudioStream(null);
+            setAudioRecorder(null);
+            audioChunks.current = [];
+
+          } catch (error) {
+            console.error('Failed to handle audio:', error);
+            setError('Failed to save audio recording');
+          }
+        };
+
+        recorder.start();
+        setSessionActive(true);
+        startListening();
+      } catch (error) {
+        console.error('Failed to start recording:', error);
+        setError('Failed to start audio recording');
+      }
     }
-  }
+  };
 
   // Handle speech transcription
   const startListening = () => {
@@ -206,59 +286,157 @@ export default function Component() {
   }, [])
 
   const takeSnapshotAndUpload = async () => {
-    if (!videoRef.current) {
-      console.error("Video element not found.");
-      return;
-    }
+    if (!videoRef.current) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.drawImage(videoRef.current, 0, 0);
+    const imageBlob = await new Promise<Blob>((resolve) => 
+      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg')
+    );
 
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
+    // Create file from blob
+    const file = new File([imageBlob], 'snapshot.jpg', { type: 'image/jpeg' });
+    const formData = new FormData();
+    formData.append('file', file);
 
-    if (context) {
-      // Set canvas dimensions to match video
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+    try {
+      // First upload to Pinata through /api/files
+      const uploadResponse = await fetch('/api/files', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!uploadResponse.ok) throw new Error('Failed to upload to Pinata');
       
-      // Draw the current video frame
-      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const uploadData = await uploadResponse.json();
+      setLatestSnapshot(URL.createObjectURL(imageBlob));
 
-      // Convert to blob
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          // Create URL for preview
-          const imageUrl = URL.createObjectURL(blob);
-          setLatestSnapshot(imageUrl);
+      // If we have courseId and lectureId, save to snapshots table
+      if (courseId && lectureId) {
+        const response = await fetch(`/api/courses/${courseId}/lecture/${lectureId}/media`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'snapshot',
+            recordingId: recordingId, // You'll need to track this in state
+            imageCid: uploadData.cid // CID from Pinata response
+          })
+        });
 
-          // Create file for upload
-          const file = new File([blob], "snapshot.png", { type: "image/png" });
-          console.log('File being uploaded:', {
-            name: file.name,
-            type: file.type,
-            size: file.size
-          });
-          
-          try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const response = await fetch('/api/files', {
-              method: 'POST',
-              body: formData
-            });
-
-            if (!response.ok) {
-              throw new Error(`Upload failed: ${response.status}`);
-            }
-
-            const result = await response.json();
-            console.log('Upload successful:', result);
-            
-          } catch (error) {
-            console.error("Upload error:", error);
-            alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
+        if (!response.ok) {
+          throw new Error('Failed to save snapshot metadata');
         }
-      }, "image/png");
+      }
+    } catch (error) {
+      console.error('Failed to handle snapshot:', error);
+      setError('Failed to save snapshot');
+    }
+  };
+
+  const handleSessionEnd = async () => {
+    try {
+      setStatus('processing');
+      
+      // Handle transcript upload
+      const transcriptBlob = new Blob([transcription.join(' ')], { type: 'text/plain' });
+      const transcriptFile = new File([transcriptBlob], 'transcript.txt', { type: 'text/plain' });
+      const transcriptFormData = new FormData();
+      transcriptFormData.append('file', transcriptFile);
+
+      const transcriptUploadResponse = await fetch('/api/files', {
+        method: 'POST',
+        body: transcriptFormData
+      });
+
+      if (!transcriptUploadResponse.ok) {
+        throw new Error('Failed to upload transcript');
+      }
+
+      const transcriptData = await transcriptUploadResponse.json();
+      console.log('Transcript upload response:', transcriptData); // Debug log
+
+      // Update recording with transcript CID
+      const transcriptMediaResponse = await fetch(`/api/courses/${courseId}/lectures/${lectureId}/media`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'transcript',
+          recordingId: recordingId, // Make sure this is passed from props
+          cid: transcriptData.IpfsHash // Use IpfsHash from Pinata response
+        })
+      });
+
+      if (!transcriptMediaResponse.ok) {
+        const errorData = await transcriptMediaResponse.json();
+        throw new Error(`Failed to save transcript metadata: ${JSON.stringify(errorData)}`);
+      }
+
+      // Generate and upload summary
+      const summaryResponse = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          transcript: transcription.join(' ')
+        })
+      });
+
+      if (!summaryResponse.ok) {
+        throw new Error('Failed to generate summary');
+      }
+
+      const summaryData = await summaryResponse.json();
+      const summary = summaryData.choices[0].message.content;
+      
+      const summaryBlob = new Blob([summary], { type: 'text/plain' });
+      const summaryFile = new File([summaryBlob], 'summary.txt', { type: 'text/plain' });
+      const summaryFormData = new FormData();
+      summaryFormData.append('file', summaryFile);
+
+      const summaryUploadResponse = await fetch('/api/files', {
+        method: 'POST',
+        body: summaryFormData
+      });
+
+      if (!summaryUploadResponse.ok) {
+        throw new Error('Failed to upload summary');
+      }
+
+      const summaryUploadData = await summaryUploadResponse.json();
+      console.log('Summary upload response:', summaryUploadData); // Debug log
+
+      const summaryMediaResponse = await fetch(`/api/courses/${courseId}/lectures/${lectureId}/media`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'summary',
+          recordingId: recordingId, // Make sure this is passed from props
+          cid: summaryUploadData.IpfsHash // Use IpfsHash from Pinata response
+        })
+      });
+
+      if (!summaryMediaResponse.ok) {
+        const errorData = await summaryMediaResponse.json();
+        throw new Error(`Failed to save summary metadata: ${JSON.stringify(errorData)}`);
+      }
+
+      setStatus('completed');
+    } catch (error) {
+      console.error('Session end error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process session');
+      setStatus('error');
     }
   };
 

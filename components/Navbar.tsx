@@ -7,6 +7,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useState } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useCourses } from '@/hooks/useCourses';
+import { useRouter } from 'next/navigation';
 
 const shakeAnimation = `
   @keyframes shake {
@@ -35,6 +36,35 @@ export default function Navbar() {
   };
 
   const { courses, loading } = useCourses();
+  const router = useRouter();
+
+  const handleCourseSelect = async (courseId: string) => {
+    try {
+      // Create a new lecture for the selected course
+      const response = await fetch(`/api/courses/${courseId}/lectures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: `Session ${new Date().toLocaleDateString()}`,
+          description: 'Recording session',
+          date: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to create lecture');
+      
+      const lecture = await response.json();
+      
+      // Close menu and redirect to recording page
+      handleClose();
+      router.push(`/course/${courseId}/lecture/${lecture.id}/record`);
+    } catch (error) {
+      console.error('Failed to create lecture:', error);
+      // Add error notification here
+    }
+  };
 
   return (
     <AppBar 
@@ -193,7 +223,7 @@ export default function Navbar() {
             courses.map((course) => (
               <MenuItem 
                 key={course.id}
-                onClick={handleClose}
+                onClick={() => handleCourseSelect(course.id)}
                 sx={{
                   color: 'white',
                   width: '100%',
@@ -202,12 +232,7 @@ export default function Navbar() {
                   }
                 }}
               >
-                <Link 
-                  href={`/record/${course.id}`} 
-                  className="no-underline text-white w-full"
-                >
-                  {course.name}
-                </Link>
+                {course.name}
               </MenuItem>
             ))
           )}

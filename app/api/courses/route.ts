@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db/index';
+import { initializeDatabase } from '@/lib/db/index';
 import { courses, courseImages, lectures } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,6 +12,9 @@ export async function GET(request: Request) {
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
+
+    // Initialize database connection first
+    const db = await initializeDatabase(userId);
 
     const userCourses = await db
       .select({
@@ -26,7 +29,6 @@ export async function GET(request: Request) {
       .from(courses)
       .where(eq(courses.userId, userId));
 
-    // Return courses without trying to fetch images for now
     return NextResponse.json({ courses: userCourses });
   } catch (error) {
     console.error('Failed to fetch courses:', error);
@@ -42,6 +44,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and User ID are required' }, { status: 400 });
     }
 
+    // Initialize database connection first
+    const db = await initializeDatabase(userId);
     const courseId = uuidv4();
     
     // Create course with only the fields that exist in the schema
@@ -70,11 +74,14 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { id } = await request.json();
+    const { id, userId } = await request.json();
     
-    if (!id) {
-      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 });
+    if (!id || !userId) {
+      return NextResponse.json({ error: 'Course ID and User ID are required' }, { status: 400 });
     }
+
+    // Initialize database connection first
+    const db = await initializeDatabase(userId);
 
     // Delete associated course images first (due to foreign key constraint)
     await db.delete(courseImages)
