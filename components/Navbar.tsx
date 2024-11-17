@@ -21,13 +21,13 @@ export default function Navbar() {
           </div>
           <nav className="flex gap-2">
             <Link href="/" className="no-underline">
-              <Button color="inherit" sx={{ color: 'white' }}>Home</Button>
+              <Button color="inherit" sx={{ color: 'white', textTransform: 'none', fontWeight: 'bold' }}>Home</Button>
             </Link>
             <Link href="/course" className="no-underline">
-              <Button color="inherit" sx={{ color: 'white' }}>Course</Button>
+              <Button color="inherit" sx={{ color: 'white', textTransform: 'none', fontWeight: 'bold' }}>Course</Button>
             </Link>
             <Link href="/new-session" className="no-underline">
-              <Button color="inherit" sx={{ color: 'white' }}>Video Dashboard</Button>
+              <Button color="inherit" sx={{ color: 'white', textTransform: 'none', fontWeight: 'bold' }}>Video Dashboard</Button>
             </Link>
           </nav>
         </div>
