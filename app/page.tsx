@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button, Card, CardContent } from "@mui/material"
 import MenuBookIcon from '@mui/icons-material/MenuBook'
+
 import { useRouter } from "next/navigation";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
@@ -60,21 +61,33 @@ export default function Home() {
 		}
 	};
 
-	const handleChange = (e: any) => {
-		setFile(e.target.files[0]);
-		uploadFile(e.target.files[0]);
-	};
+export default function Home() {
+	const { isLoaded, isSignedIn, user } = useUser();
+	const [courses, setCourses] = useState<Course[]>([]);
 
-	const loadRecent = async () => {
-		try {
-			const res = await fetch("/api/files");
-			const json = await res.json();
-			setCid(json.ipfs_pin_hash);
-		} catch (e) {
-			console.log(e);
-			alert("trouble loading files");
+	useEffect(() => {
+		if (isLoaded && isSignedIn && user?.id) {
+			// Initialize database
+			fetch('/api/init-db', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ userId: user.id }),
+			})
+			.then(() => {
+				// Fetch courses after DB is initialized
+				return fetch(`/api/courses?userId=${user.id}`);
+			})
+			.then(res => res.json())
+			.then(data => {
+				if (data.courses) {
+					setCourses(data.courses);
+				}
+			})
+			.catch(console.error);
 		}
-	};
+	}, [isLoaded, isSignedIn, user?.id]);
 
 	return (
 		<div>
