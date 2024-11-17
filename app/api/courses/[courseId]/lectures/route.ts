@@ -38,3 +38,15 @@ export async function POST(
     );
   }
 } 
+
+
+// export const lectures = sqliteTable('lectures', {
+//   id: text('id').primaryKey(),
+//   courseId: text('course_id').references(() => courses.id),
+//   title: text('title').notNull(),
+//   description: text('description'),
+//   date: text('date').notNull(),
+//   createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
+//   updatedAt: text('updated_at').default('CURRENT_TIMESTAMP'),
+//   userId: text('user_id').notNull()
+// });

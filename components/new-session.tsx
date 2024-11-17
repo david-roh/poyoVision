@@ -1,10 +1,11 @@
 'use client'
 
-import { Button, Card, CardContent, Typography } from '@mui/material';
+import { Button, Card, CardContent, Typography, Popover, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { PhotoCamera, Flag, Mic, Videocam } from '@mui/icons-material';
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
+import ReactMarkdown from 'react-markdown';
 
 export default function Component() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function Component() {
   const [transcription, setTranscription] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
+  
   const [selectedDevice, setSelectedDevice] = useState<string>('')
 
   const [isMounted, setIsMounted] = useState(false)
@@ -28,6 +30,13 @@ export default function Component() {
   } = useSpeechRecognition()
 
   const [latestSnapshot, setLatestSnapshot] = useState<string | null>(null)
+  const [selectedText, setSelectedText] = useState('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [definition, setDefinition] = useState<string | null>(null);
+  const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
+  const [sessionDefinitions, setSessionDefinitions] = useState<Array<{term: string, definition: string}>>([]);
 
   // Function to get list of video devices
   const getVideoDevices = async () => {
@@ -176,7 +185,8 @@ export default function Component() {
           return response.json()
         })
         .then(data => {
-          console.log('Transcript Summary:', data.choices[0].message.content)
+          setSessionSummary(data.choices[0].message.content);
+          setShowSummaryModal(true);
         })
         .catch(error => {
           console.error('Error getting summary:', error)
@@ -260,6 +270,48 @@ export default function Component() {
         }
       }, "image/png");
     }
+  };
+
+  const handleTextSelection = async (event: MouseEvent) => {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+
+    if (selectedText) {
+      setSelectedText(selectedText);
+      setAnchorEl(event.target as HTMLElement);
+    } else {
+      setAnchorEl(null);
+    }
+  };
+
+  const handleGetDefinition = async () => {
+    setIsLoadingDefinition(true);
+    try {
+      const response = await fetch('/api/definition', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ highlightedText: selectedText }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get definition');
+      
+      const data = await response.json();
+      const newDefinition = data.choices[0].message.content;
+      setDefinition(newDefinition);
+      // Store the definition for the session summary
+      setSessionDefinitions(prev => [...prev, { term: selectedText, definition: newDefinition }]);
+    } catch (error) {
+      console.error('Error getting definition:', error);
+    } finally {
+      setIsLoadingDefinition(false);
+    }
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+    setDefinition(null);
   };
 
   return (
@@ -366,6 +418,7 @@ export default function Component() {
                   <div
                     key={i}
                     className="rounded-lg bg-white p-4 text-sm shadow-sm border border-[#3E53A0]/10"
+                    onMouseUp={(e) => handleTextSelection(e as unknown as MouseEvent)}
                   >
                     {text}
                   </div>
@@ -375,6 +428,52 @@ export default function Component() {
                     {interimTranscript}
                   </div>
                 )}
+
+                <Popover
+                  open={Boolean(anchorEl)}
+                  anchorEl={anchorEl}
+                  onClose={handleClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                  }}
+                >
+                  <div className="p-4 max-w-sm">
+                    {!definition ? (
+                      <div className="flex flex-col gap-3">
+                        <Typography variant="body2">
+                          Would you like to get a definition for:
+                          <br />
+                          <strong>"{selectedText}"</strong>?
+                        </Typography>
+                        <Button
+                          onClick={handleGetDefinition}
+                          disabled={isLoadingDefinition}
+                          variant="contained"
+                          size="small"
+                          sx={{ backgroundColor: '#3E53A0' }}
+                        >
+                          {isLoadingDefinition ? 'Loading...' : 'Get Definition'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <Typography variant="body2">
+                          <strong>Definition:</strong>
+                        </Typography>
+                        <div className="prose prose-sm max-w-none">
+                          <ReactMarkdown>
+                            {definition}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Popover>
               </div>
             </CardContent>
           </Card>
@@ -400,6 +499,37 @@ export default function Component() {
           </button>
         </div>
       )}
+
+      {/* Summary Modal */}
+      <Dialog
+        open={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Session Summary</DialogTitle>
+        <DialogContent>
+          <div className="prose max-w-none">
+            <h2>Study Notes</h2>
+            <ReactMarkdown>{sessionSummary || ''}</ReactMarkdown>
+            
+            {sessionDefinitions.length > 0 && (
+              <>
+                <h2>Definitions</h2>
+                {sessionDefinitions.map((def, index) => (
+                  <div key={index} className="mb-4">
+                    <h3 className="font-bold">{def.term}</h3>
+                    <ReactMarkdown>{def.definition}</ReactMarkdown>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSummaryModal(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }
