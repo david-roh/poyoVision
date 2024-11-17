@@ -49,7 +49,7 @@ export const sessions = sqliteTable('sessions', {
 // Snapshots table (images taken during sessions)
 export const snapshots = sqliteTable('snapshots', {
   id: text('id').primaryKey(),
-  sessionId: text('session_id').references(() => sessions.id),
+  recordingId: text('recording_id').references(() => recordings.id),
   userId: text('user_id').notNull(),
   imageCid: text('image_cid').notNull(),
   createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
@@ -65,4 +65,17 @@ export const notes = sqliteTable('notes', {
   content: text('content').notNull(),
   createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
   updatedAt: text('updated_at').default('CURRENT_TIMESTAMP')
+});
+
+// Add this with the other table definitions
+export const recordings = sqliteTable('recordings', {
+  id: text('id').primaryKey(),
+  lectureId: text('lecture_id').references(() => lectures.id),
+  userId: text('user_id').notNull(),
+  startedAt: text('started_at').default('CURRENT_TIMESTAMP'),
+  endedAt: text('ended_at'),
+  status: text('status').default('active'),
+  recordingCid: text('recording_cid'),
+  transcriptCid: text('transcript_cid'),
+  summary: text('summary')
 }); 

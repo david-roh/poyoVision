@@ -10,18 +10,9 @@ export async function GET(
   try {
     await initializeDatabase('system');
 
-    // Get lecture with its latest recording
+    // Get lecture details
     const lecture = await db
-      .select({
-        id: lectures.id,
-        title: lectures.title,
-        description: lectures.description,
-        date: lectures.date,
-        status: lectures.status,
-        lastRecordingId: lectures.lastRecordingId,
-        courseId: lectures.courseId,
-        createdAt: lectures.createdAt
-      })
+      .select()
       .from(lectures)
       .where(
         and(
@@ -38,17 +29,9 @@ export async function GET(
       );
     }
 
-    // Get recordings with their snapshots and notes
+    // Get recordings for this lecture
     const recordingsData = await db
-      .select({
-        id: recordings.id,
-        startedAt: recordings.startedAt,
-        endedAt: recordings.endedAt,
-        status: recordings.status,
-        recordingCid: recordings.recordingCid,
-        transcriptCid: recordings.transcriptCid,
-        summary: recordings.summary
-      })
+      .select()
       .from(recordings)
       .where(eq(recordings.lectureId, params.lectureId));
 
@@ -56,8 +39,12 @@ export async function GET(
     const recordingsWithDetails = await Promise.all(
       recordingsData.map(async (recording) => {
         const [recordingSnapshots, recordingNotes] = await Promise.all([
-          db.select().from(snapshots).where(eq(snapshots.recordingId, recording.id)),
-          db.select().from(notes).where(eq(notes.recordingId, recording.id))
+          db.select()
+            .from(snapshots)
+            .where(eq(snapshots.recordingId, recording.id)),
+          db.select()
+            .from(notes)
+            .where(eq(notes.lectureId, params.lectureId))
         ]);
 
         return {
