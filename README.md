@@ -20,7 +20,9 @@
 </p>
 </div>
 <br clear="right">
+
 ### 🏅 HackUTD 2024 - Poyo Grand Prize Overall (Most Prestigious Prize at 2nd largest Hackathon in US)
+
 ## 🔗 Table of Contents
 
 - [📍 Overview](#-overview)
