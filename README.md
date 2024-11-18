@@ -44,7 +44,7 @@ _Most Prestigious Prize at the 2nd Largest Hackathon in the U.S._
 
 ## 📍 Overview
 
-poyo.ed revolutionizes image analysis with its cutting-edge AI-driven platform, designed to extract and summarize visual content swiftly. Key features include robust machine learning models and seamless integration with Groq SDK, making it ideal for developers and businesses seeking efficient image processing solutions. This project enhances user engagement and operational efficiency by transforming complex visual data into actionable insights.
+poyo.ed revolutionizes image analysis with its cutting-edge AI-driven platform, designed to extract and summarize visual content swiftly. Key features include robust machine learning models and seamless integration with Groq, SambaNova, Pinata Cloud APIs, making it ideal for developers and businesses seeking efficient image processing solutions. This project enhances user engagement and operational efficiency by transforming complex visual data into actionable insights.
 
 ---
 
