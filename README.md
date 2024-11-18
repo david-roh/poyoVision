@@ -5,8 +5,13 @@
 	<em>Envision More, Achieve Brilliance with AI</em>
 </p>
 <p align="left">
-	<img src="https://img.shields.io/github/languages/top/david-roh/poyoVision?style=default&color=0080ff" alt="repo-top-language">
-	<img src="https://img.shields.io/github/languages/count/david-roh/poyoVision?style=default&color=0080ff" alt="repo-language-count">
+	<img src=https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB alt="React">
+  <img src=https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white alt="Typescript">
+  <img src=https://img.shields.io/badge/next%20js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white alt="Next">
+  <img src=https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white alt="Tailwind">
+	<img src="https://img.shields.io/badge/Pinata_Cloud-F2E3A1?style=for-the-badge&logo=pinata&logoColor=black" alt="Pinata Cloud">
+	<img src="https://img.shields.io/badge/Groq-FFA500?style=for-the-badge" alt="Groq">
+	<img src="https://img.shields.io/badge/SambaNova-007BFF?style=for-the-badge" alt="SambaNova">
 </p>
 <p align="left"><!-- default option, no dependency badges. -->
 </p>
@@ -15,7 +20,7 @@
 </p>
 </div>
 <br clear="right">
-
+### 🏅 HackUTD 2024 - Poyo Grand Prize Overall (Most Prestigious Prize at 2nd largest Hackathon in US)
 ## 🔗 Table of Contents
 
 - [📍 Overview](#-overview)
