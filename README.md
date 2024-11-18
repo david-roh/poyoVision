@@ -1,5 +1,5 @@
 <div align="left" style="position: relative;">
-<img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" align="right" width="30%" style="margin: -20px 0 0 20px;">
+<img src="https://d112y698adiu2z.cloudfront.net/photos/production/software_thumbnail_photos/003/142/031/datas/medium.jpg" align="right" width="30%" style="margin: -20px 0 0 20px;">
 <h1>poyo.ed</h1>
 <p align="left">
 	<em>Envision More, Achieve Brilliance with AI</em>
