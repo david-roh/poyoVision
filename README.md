@@ -21,7 +21,8 @@
 </div>
 <br clear="right">
 
-### 🏅 HackUTD 2024 - Poyo Grand Prize Overall (Most Prestigious Prize at 2nd largest Hackathon in US)
+### 🏅 HackUTD 2024 - Poyo Grand Prize Overall
+_Most Prestigious Prize at the 2nd Largest Hackathon in the U.S._
 
 ## 🔗 Table of Contents
 
