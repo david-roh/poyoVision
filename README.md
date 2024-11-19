@@ -36,7 +36,6 @@ _Most Prestigious Prize at the 2nd Largest Hackathon in the U.S._
   - [☑️ Prerequisites](#-prerequisites)
   - [⚙️ Installation](#-installation)
   - [🤖 Usage](#🤖-usage)
-  - [🧪 Testing](#🧪-testing)
 - [📌 Project Roadmap](#-project-roadmap)
 - [🔰 Contributing](#-contributing)
 - [🎗 License](#-license)
@@ -59,7 +58,6 @@ poyo.ed revolutionizes image analysis with its cutting-edge AI-driven platform, 
 | 📄 | **Documentation** | <ul><li>Documentation includes detailed setup and usage instructions, enhancing user onboarding.</li><li>Codebase includes a variety of file types (ts, tsx, js, json, css), suggesting comprehensive documentation within code.</li><li>Use of badges in documentation for visual enhancement and quick reference.</li></ul> |
 | 🔌 | **Integrations**  | <ul><li>Integrates with npm for package management.</li><li>Uses various libraries like React, Next.js, and Material-UI, indicating robust frontend capabilities.</li><li>Integration with external APIs and SDKs like Clerk, Pinata, and Drizzle ORM for enhanced functionality.</li></ul> |
 | 🧩 | **Modularity**    | <ul><li>Project structure likely modular based on the use of React components and TypeScript modules.</li><li>Use of npm suggests modular management of dependencies.</li><li>Separation of configuration files (e.g., `next.config.mjs`) and styling files (e.g., CSS, Tailwind) supports modular architecture.</li></ul> |
-| 🧪 | **Testing**       | <ul><li>Includes npm scripts for testing, indicating an emphasis on code reliability.</li><li>Use of TypeScript can be associated with easier unit testing due to static typing.</li></ul> |
 | ⚡️  | **Performance**   | <ul><li>Use of Next.js promotes optimized page loading through server-side rendering and static generation.</li><li>Dependency locking with `package-lock.json` helps maintain consistent performance across environments.</li><li>Configuration settings in `next.config.mjs` aimed at enhancing performance.</li></ul> |
 | 🛡️ | **Security**      | <ul><li>Use of `@clerk/nextjs` for secure authentication processes.</li><li>Dependency management through npm includes security patches via package updates.</li></ul> |
 
