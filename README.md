@@ -4,7 +4,7 @@
 </a>
 <h1>poyo.ed</h1>
 <p align="left">
-	<em>Envision More, Achieve Brilliance with AI</em>
+	<em>Smart Poyo for Smarter Learning: Capture, Transcribe, Summarize.</em>
 </p>
 <p align="left">
 	<img src=https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB alt="React">
