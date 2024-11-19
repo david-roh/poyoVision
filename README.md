@@ -1,5 +1,7 @@
 <div align="left" style="position: relative;">
-<img src="https://d112y698adiu2z.cloudfront.net/photos/production/software_thumbnail_photos/003/142/031/datas/medium.jpg" align="right" width="30%" style="margin: -20px 0 0 20px;">
+<a href="https://devpost.com/software/poyovision" target="_blank">
+    <img src="https://d112y698adiu2z.cloudfront.net/photos/production/software_thumbnail_photos/003/142/031/datas/medium.jpg" align="right" width="30%" style="margin: -20px 0 0 20px;">
+</a>
 <h1>poyo.ed</h1>
 <p align="left">
 	<em>Envision More, Achieve Brilliance with AI</em>
